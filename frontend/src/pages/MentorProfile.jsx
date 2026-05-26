@@ -243,20 +243,23 @@ export default function MentorProfile() {
         </div>
 
       </div>
-
       {/* Connection Modal (Day 4 Preview Dialog) */}
       {showConnectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-dark-950/80 backdrop-blur-md" onClick={() => setShowConnectModal(false)}></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 overflow-x-hidden overflow-y-auto">
+          {/* Fixed Backdrop overlay spanning entire viewport */}
+          <div 
+            className="fixed inset-0 bg-dark-950/85 backdrop-blur-md transition-opacity duration-350 cursor-pointer" 
+            onClick={() => setShowConnectModal(false)}
+          ></div>
           
-          {/* Dialog box */}
-          <div className="bg-dark-900 border border-slate-800 p-8 rounded-3xl max-w-lg w-full relative z-10 shadow-2xl space-y-6">
+          {/* Dialog box centered perfectly with margin spacing */}
+          <div className="bg-dark-900 border border-slate-800 p-6 md:p-8 rounded-3xl max-w-lg w-full relative z-10 shadow-2xl space-y-6 transform scale-100 transition-all duration-300">
             <button 
               onClick={() => setShowConnectModal(false)}
-              className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors duration-200 cursor-pointer"
+              className="absolute top-5 right-5 text-slate-450 hover:text-white transition-colors duration-200 cursor-pointer p-1.5 rounded-lg bg-slate-950/20 hover:bg-slate-900 border border-transparent hover:border-slate-800"
+              aria-label="Close modal"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>

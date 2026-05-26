@@ -95,16 +95,7 @@ def list_mentors(
     if city:
         query = query.filter(User.city.ilike(f"%{city}%"))
 
-    # Domain filter — check if the domain string appears in the JSON array
-    # SQLite stores JSON as text so ilike works; PostgreSQL has JSON operators
-    # Using ilike on the cast string is the safe cross-DB approach here
-    if domain:
-        query = query.filter(
-            MentorProfile.domains.cast(db.bind.dialect.type_descriptor(
-                # fallback: filter in Python after fetch
-                type(None)
-            ).__class__).ilike(f"%{domain}%")
-        )
+    # Domain filter — handled in Python list filtering below for safe cross-DB compatibility
 
     profiles = query.all()
 
