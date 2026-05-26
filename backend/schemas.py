@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Optional, Literal
 from pydantic import BaseModel, Field, ConfigDict
+from .models import RequestStatus, ConnectionStatus
 
 # ==========================================
 # AUTHENTICATION & USER SCHEMAS
@@ -77,7 +78,7 @@ class ConnectionRequestCreate(BaseModel):
     answer_3: str = Field(..., description="What is your concrete ask for the first session?")
 
 class ConnectionRequestUpdate(BaseModel):
-    status: Literal["accepted", "declined"] = Field(..., description="Must be either 'accepted' or 'declined'")
+    status: Literal[RequestStatus.ACCEPTED, RequestStatus.DECLINED] = Field(..., description="Must be either 'accepted' or 'declined'")
 
 class ConnectionRequestRead(BaseModel):
     id: int
@@ -86,8 +87,9 @@ class ConnectionRequestRead(BaseModel):
     answer_1: str
     answer_2: str
     answer_3: str
-    status: str
+    status: RequestStatus
     created_at: datetime
+    updated_at: datetime
     student: UserRead
     mentor: UserRead
 
@@ -103,6 +105,7 @@ class MentorshipConnectionRead(BaseModel):
     student_id: int
     mentor_id: int
     created_from_request_id: int
+    status: ConnectionStatus
     created_at: datetime
     student: UserRead
     mentor: UserRead

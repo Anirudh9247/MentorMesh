@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from ..database import get_db
-from ..models import User, ConnectionRequest, MentorshipConnection
+from ..models import User, ConnectionRequest, MentorshipConnection, RequestStatus, ConnectionStatus
 from ..schemas import ConnectionRequestCreate, ConnectionRequestUpdate, ConnectionRequestRead
 from ..auth import get_current_user
 
@@ -55,7 +55,7 @@ def create_connection_request(
     existing_request = db.query(ConnectionRequest).filter(
         ConnectionRequest.student_id == current_user.id,
         ConnectionRequest.mentor_id == payload.mentor_id,
-        ConnectionRequest.status.in_(["pending", "accepted"])
+        ConnectionRequest.status.in_([RequestStatus.PENDING.value, RequestStatus.ACCEPTED.value])
     ).first()
     if existing_request:
         raise HTTPException(
@@ -70,14 +70,14 @@ def create_connection_request(
         answer_1=payload.answer_1.strip(),
         answer_2=payload.answer_2.strip(),
         answer_3=payload.answer_3.strip(),
-        status="pending"
+        status=RequestStatus.PENDING.value
     )
     db.add(new_request)
     db.commit()
 
     return {
         "message": "Request sent successfully",
-        "status": "pending"
+        "status": RequestStatus.PENDING.value
     }
 
 # ─────────────────────────────────────────────
@@ -149,24 +149,24 @@ def update_request_status(
         )
 
     # 4. Check if request has already been processed
-    if req.status != "pending":
+    if req.status != RequestStatus.PENDING.value:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"This request has already been processed (status: {req.status})."
         )
 
     # 5. Enforce accepted/declined status
-    if payload.status not in ["accepted", "declined"]:
+    if payload.status not in [RequestStatus.ACCEPTED, RequestStatus.DECLINED]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Status must be 'accepted' or 'declined'."
         )
 
     # 6. Apply status update
-    req.status = payload.status
+    req.status = payload.status.value
 
     # 7. Auto-create relationship connection if accepted
-    if payload.status == "accepted":
+    if payload.status == RequestStatus.ACCEPTED:
         # Check if relation already exists just in case
         existing_conn = db.query(MentorshipConnection).filter(
             MentorshipConnection.student_id == req.student_id,
@@ -176,7 +176,8 @@ def update_request_status(
             connection = MentorshipConnection(
                 student_id=req.student_id,
                 mentor_id=req.mentor_id,
-                created_from_request_id=req.id
+                created_from_request_id=req.id,
+                status=ConnectionStatus.ACTIVE.value
             )
             db.add(connection)
 

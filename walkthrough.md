@@ -1,129 +1,88 @@
-# MentorMesh — Day 1 Backend Foundation Walkthrough
+# MentorMesh — Day 2, Day 3 & Day 4 Walkthrough
 
-This document outlines the setup, installation dependencies, database connection, model architecture, authentication setup, and API requests implemented for the MentorMesh backend.
-
-## 1. Required Dependencies & Installation
-
-To run the backend, you will need to install the following Python packages. Create a virtual environment first, then run the installation commands.
-
-### Installation Steps
-
-In your terminal (run from the project root `E:\MentorMesh`):
-
-```bash
-# 1. Create a virtual environment
-python -m venv venv
-
-# 2. Activate the virtual environment
-# On Windows (PowerShell):
-.\venv\Scripts\Activate.ps1
-# On Windows (CMD):
-.\venv\Scripts\activate.bat
-# On macOS/Linux:
-source venv/bin/activate
-
-# 3. Install core dependencies
-pip install fastapi uvicorn sqlalchemy python-jose[cryptography] passlib[bcrypt] bcrypt pydantic
-```
-
-*Note: `python-jose[cryptography]` handles JWT creation and parsing, while `passlib[bcrypt]` combined with `bcrypt` secures user passwords.*
+This document outlines the visual, functional, and architectural updates implemented for Day 2 (Mentor Profiles, Discovery), Day 3 (AI Multi-Model Matching Engine), and Day 4 (Intent-Gated Request Flow).
 
 ---
 
-## 2. Database Connection
+## Day 4: Intent-Gated Request Flow
 
-The database configuration in [database.py](file:///E:/MentorMesh/backend/database.py) uses **SQLAlchemy**.
-* **Local Development**: Connects to a local SQLite database file named `mentormesh.db` generated automatically in the root directory.
-* **Production/Render**: Detects if a `DATABASE_URL` environment variable is defined. If so, it dynamically overrides the SQLite fallback and connects to PostgreSQL, converting any legacy `postgres://` protocols to `postgresql://` automatically to avoid driver errors.
-* **Session Lifecycle**: The `get_db` generator yields a database session to endpoints and closes it safely in a `finally` block when the request finishes.
+We implemented the complete Intent-Gated request invitation system, connecting students to mentors through a multi-step form, supporting real-time statuses, and automatically creating mentorship relationships on approval.
 
----
+### 1. Key Technical Backend Implementations
+* **Database Updates ([models.py](file:///e:/MentorMesh/backend/models.py))** [MODIFY]:
+  - Added the `MentorshipConnection` table to store active relationships.
+  - Configured composite indices `idx_student_mentor` and `idx_conn_student_mentor` to enforce lookup speeds and duplication checks at the database level.
+* **API Schemas ([schemas.py](file:///e:/MentorMesh/backend/schemas.py))** [MODIFY]:
+  - Restrained `ConnectionRequestUpdate` statuses strictly to `accepted` or `declined`.
+  - Added read schemas for the mentorship connections model.
+* **Requests API Router ([requests.py](file:///e:/MentorMesh/backend/routers/requests.py))** [NEW]:
+  - `POST /requests`: Creates a pending connection request after verifying user roles (student only) and checking for duplicates.
+  - `GET /requests/sent`: Retrieves sent requests for students.
+  - `GET /requests/received`: Retrieves received requests for mentors.
+  - `PATCH /requests/{id}`: Processes requests (accept/decline) after ownership validation, and creates a `MentorshipConnection` if accepted.
 
-## 3. Database Models
-
-The [models.py](file:///E:/MentorMesh/backend/models.py) file maps Python classes to database tables:
-1. **`User`**: Core accounts table representing both `student` and `mentor` roles.
-2. **`MentorProfile`**: Detailed mentor configuration linked via one-to-one relationship to `User`. Domains are stored as a serializable JSON list.
-3. **`ConnectionRequest`**: Tracks connection invitations. Stores responses to the 3 mandatory student questions.
-4. **`Session`**: Tracks scheduled virtual chats.
-5. **`Review`**: Enables students to rate and comment on sessions.
-
-All foreign keys use `ondelete="CASCADE"` to ensure child records are removed when parent entities are deleted.
-
----
-
-## 4. API Schemas & Data Serialization
-
-The Pydantic v2 schemas in [schemas.py](file:///E:/MentorMesh/backend/schemas.py) perform request-data validation and serialize outputs:
-* **`UserRegister`**: Validates standard signup fields, enforcing minimum lengths on names/passwords.
-* **`UserLogin`**: Receives validation payload.
-* **`Token` / `TokenData`**: Defines payload configuration for JWT authorization headers.
-* **`UserRead`**: Strips out sensitive fields like passwords, exposing only safe fields.
-* **`from_attributes = True`**: Configured to translate SQLAlchemy model instances to Pydantic JSON outputs.
-
----
-
-## 5. Security & Authentication Flow
-
-Auth utilities in [auth.py](file:///E:/MentorMesh/backend/auth.py) manage password security and JWTs:
-* **Hashing**: Passwords are securely hashed with standard `bcrypt`.
-* **Signing**: JWTs are signed using HMAC-SHA256 (`HS256`) with a private key loaded from `JWT_SECRET`.
-* **Extraction**: The `get_current_user` dependency automatically extracts the `Authorization: Bearer <token>` token, verifies its expiration, decodes the sub-claim (email), and queries the database for the current logged-in user.
+### 2. Frontend User Interface
+* **IntentForm Modal ([IntentForm.jsx](file:///e:/MentorMesh/frontend/src/components/IntentForm.jsx))** [NEW]:
+  - Multi-step wizard ("Question X of 3") with a visual progress bar.
+  - Character minimum validation (10 chars) and detailed placeholder guidance for each step.
+* **Mentor Profile Connection Triggers ([MentorProfile.jsx](file:///e:/MentorMesh/frontend/src/pages/MentorProfile.jsx))** [MODIFY]:
+  - Dynamically disables or transforms button styles based on connection status (e.g. shows "Pending Approval" or "Connected").
+* **My Requests Tracker ([Browse.jsx](file:///e:/MentorMesh/frontend/src/pages/Browse.jsx))** [MODIFY]:
+  - Tabbed interface separating Browse and Requests.
+  - Display list with color status badges: Amber (pending), Green (accepted), and Red (declined).
+  - Expandable detail accordion showing student answers.
+* **Mentorship CRM Inbox ([MentorDashboard.jsx](file:///e:/MentorMesh/frontend/src/pages/MentorDashboard.jsx))** [MODIFY]:
+  - Sidebar counter and received requests inbox with collapsing cards, time-ago formatting, and Accept/Decline action handlers.
 
 ---
 
-## 6. Endpoints Implemented
+## Day 3: AI Matching Engine Integration
 
-The API endpoints in [routers/auth.py](file:///E:/MentorMesh/backend/routers/auth.py) are:
+We integrated a unified multi-model matching system that connects to Anthropic (Claude) and OpenAI (GPT), letting students toggle between providers dynamically to find optimal mentors.
 
-### `POST /auth/register`
-* **Purpose**: Registers a new user.
-* **Validation**: Rejects existing email addresses, validates that the role is strictly either `'student'` or `'mentor'`.
-* **Flow**: Hashes the password, inserts a user record, commits, and returns the user payload without password hashes.
+### 1. Key Technical Implementations
+* **AI Matching Logic ([match.py](file:///e:/MentorMesh/backend/services/match.py))** [NEW]:
+  - Connects to **Anthropic Claude** using the `claude-sonnet-4-20250514` model with a max token limit of 1000.
+  - Connects to **OpenAI GPT-4o** using JSON schema output mode.
+  - **High-Fidelity Offline Fallback**: If no API keys are supplied (or if standard calls encounter network constraints), the system automatically triggers a Python-based keyword heuristic. This matches goals with mentor cities, domains, and bios, assigning logical scores and generating custom matching reasons, ensuring the **live demo functions perfectly without keys**.
+* **Request & Result Schemas ([schemas.py](file:///e:/MentorMesh/backend/schemas.py))** [MODIFY]:
+  - Created `MatchRequest` to validate goals and the selected provider.
+  - Created `MatchResult` to package mentor details along with their computed match score and reason block.
+* **Match Router Endpoint ([mentors.py](file:///e:/MentorMesh/backend/routers/mentors.py))** [MODIFY]:
+  - Registered `POST /mentors/match`. Fetches all active mentor profiles, filters out the requester, structures minimal data payloads, and forwards them to `run_ai_match`.
 
-### `POST /auth/login`
-* **Purpose**: Logs in a registered user.
-* **Validation**: Matches password hash. If invalid, throws a `401 Unauthorized` exception.
-* **Flow**: Signs and returns a JWT containing the user's `email` and `role`.
+### 2. Frontend User Interface
+* **AI Matchmaker Panel ([Browse.jsx](file:///e:/MentorMesh/frontend/src/pages/Browse.jsx))** [MODIFY]:
+  - Added an **AI Matchmaker** card to the sidebar.
+  - Students can describe their mentorship goals in a text box, select their AI engine from a dropdown (Claude vs. GPT-4), and click **"Generate AI Matches"**.
+  - Triggers a loading pulse and renders ranked cards with custom exit buttons.
+* **AI Score & Explanation Cards ([MentorCard.jsx](file:///e:/MentorMesh/frontend/src/components/MentorCard.jsx))** [MODIFY]:
+  - Displays a green glowing `⚡ XX% Match` indicator.
+  - Adds an indigo alert box displaying a dynamic, explanation-based **"Match Reason"** (e.g. *"Also based in Hyderabad, Harsha can discuss your QRNG paper and React goals in person."*).
 
 ---
 
-## 7. Testing the Backend Locally
+## Day 2: Mentor Profiles & Spacing Refinements
 
-To test the backend locally:
+* **Unified 2-Column Browse Layout**: Re-organized [Browse.jsx](file:///e:/MentorMesh/frontend/src/pages/Browse.jsx) into a professional sidebar structure. Added a "Mesh Guide" card and "Locality welcome header" to remove empty spaces.
+* **Mentor Dashboard Statistics ([MentorDashboard.jsx](file:///e:/MentorMesh/frontend/src/pages/MentorDashboard.jsx))**: Added completed session cards, gold rating indices, and a gamified profile completion progress bar.
+* **Centered Modal positioning ([MentorProfile.jsx](file:///e:/MentorMesh/frontend/src/pages/MentorProfile.jsx))**: centered student connection request overlay using `fixed inset-0` flex alignment and responsive scroll-lock overlays.
 
-1. Run the FastAPI development server:
+---
+
+## How to Test Locally
+
+1. **Start Backend**:
    ```bash
    uvicorn backend.main:app --reload
    ```
-2. Open your browser and head to:
-   * **API Root**: [http://localhost:8000/](http://localhost:8000/) (should return healthy status JSON)
-   * **Swagger Docs**: [http://localhost:8000/docs](http://localhost:8000/docs) (interactive API client)
-
-### Testing via PowerShell (Local Client)
-
-Run the following commands in a PowerShell terminal to test backend operations:
-
-#### Register a Student:
-```powershell
-$registerBody = @{
-    name = "Harsha Vardhan"
-    email = "harsha.v@ace.edu"
-    password = "securepassword123"
-    role = "student"
-    city = "Hyderabad"
-} | ConvertTo-Json
-
-Invoke-RestMethod -Method Post -Uri "http://localhost:8000/auth/register" -ContentType "application/json" -Body $registerBody
-```
-
-#### Login and Retrieve JWT Token:
-```powershell
-$loginBody = @{
-    email = "harsha.v@ace.edu"
-    password = "securepassword123"
-} | ConvertTo-Json
-
-$tokenResponse = Invoke-RestMethod -Method Post -Uri "http://localhost:8000/auth/login" -ContentType "application/json" -Body $loginBody
-$tokenResponse
-```
+2. **Start Frontend**:
+   ```bash
+   cd frontend
+   npm run dev
+   ```
+3. **Verify All Edge Case Backend Tests**:
+   ```bash
+   .venv\Scripts\python test_requests.py
+   ```
+   *(Confirms students register requests, duplicates check blocks, invalid/non-student responses reject, and cascades remove correctly).*

@@ -34,21 +34,42 @@ export default function Browse() {
   const [aiMatches, setAiMatches] = useState([]);
   const [aiLoading, setAiLoading] = useState(false);
 
+  // Connection Requests tab & status state
+  const [activeTab, setActiveTab] = useState('browse'); // 'browse' or 'requests'
+  const [sentRequests, setSentRequests] = useState([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [expandedRequests, setExpandedRequests] = useState({});
+
   // Fetch current user and mentors list on mount
   useEffect(() => {
     const initPage = async () => {
       setLoading(true);
       setError('');
+      let currentUser = null;
       try {
         const userRes = await client.get('/auth/me');
+        currentUser = userRes.data;
         setStudent(userRes.data);
         localStorage.setItem('studentDetails', JSON.stringify(userRes.data));
       } catch (err) {
         console.error("Failed to load user info:", err);
         const cachedUser = localStorage.getItem('user');
-        if (!cachedUser) {
+        if (cachedUser) {
+          currentUser = JSON.parse(cachedUser);
+          setStudent(currentUser);
+        } else {
           navigate('/login');
           return;
+        }
+      }
+
+      // If student, pre-fetch sent requests to show count badge
+      if (currentUser && currentUser.role === 'student') {
+        try {
+          const sRes = await client.get('/requests/sent');
+          setSentRequests(sRes.data);
+        } catch (e) {
+          console.error("Error fetching sent requests initially:", e);
         }
       }
 
@@ -152,6 +173,25 @@ export default function Browse() {
   const handleExitAiMode = () => {
     setIsAiMode(false);
     setAiGoal('');
+  };
+
+  const fetchSentRequestsList = async () => {
+    setRequestsLoading(true);
+    try {
+      const res = await client.get('/requests/sent');
+      setSentRequests(res.data);
+    } catch (err) {
+      console.error("Failed to load sent requests:", err);
+    } finally {
+      setRequestsLoading(false);
+    }
+  };
+
+  const toggleRequestExpand = (id) => {
+    setExpandedRequests(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
   };
 
   const handleSignOut = () => {
@@ -354,122 +394,265 @@ export default function Browse() {
           </div>
 
           {/* Right Column: Active Filters, Mentors Grid */}
-          <div className="lg:col-span-3 space-y-4">
+          <div className="lg:col-span-3 space-y-6">
             
-            {/* Filter tags header */}
-            <div className="flex flex-wrap items-center justify-between gap-4 py-2">
-              <div className="text-xs text-slate-400">
-                {isAiMode ? (
-                  <span className="flex items-center gap-1.5 font-bold text-indigo-400">
-                    <span className="animate-pulse">⚡</span> AI Matchmaker active: showing {aiMatches.length} sorted recommendations ({aiProvider === 'anthropic' ? 'Claude' : 'GPT'})
-                  </span>
-                ) : (
-                  <span>Showing <strong className="text-white">{mentors.length}</strong> available mentors</span>
+            {/* Tabs */}
+            <div className="flex border-b border-slate-900 gap-6">
+              <button
+                onClick={() => setActiveTab('browse')}
+                className={`pb-3 font-bold text-sm transition-all relative cursor-pointer ${
+                  activeTab === 'browse' ? 'text-primary-400' : 'text-slate-450 hover:text-white'
+                }`}
+              >
+                Browse Mentors
+                {activeTab === 'browse' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-500 rounded-full"></div>
                 )}
-              </div>
-
-              {/* Reset filter button */}
-              {(searchQuery || selectedDomain || localOnly || isAiMode) && (
-                <button
-                  onClick={handleClearFilters}
-                  className="py-1 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  Clear All Filters
-                </button>
-              )}
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('requests');
+                  fetchSentRequestsList();
+                }}
+                className={`pb-3 font-bold text-sm transition-all relative cursor-pointer flex items-center gap-2 ${
+                  activeTab === 'requests' ? 'text-primary-400' : 'text-slate-450 hover:text-white'
+                }`}
+              >
+                My Requests Tracker
+                {sentRequests.length > 0 && (
+                  <span className="py-0.5 px-2 text-[10px] bg-primary-500/10 text-primary-400 border border-primary-500/20 rounded-full font-black">
+                    {sentRequests.length}
+                  </span>
+                )}
+                {activeTab === 'requests' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-500 rounded-full"></div>
+                )}
+              </button>
             </div>
 
-            {/* Error banner */}
-            {error && (
-              <div className="p-4 bg-red-500/10 border border-red-500/25 rounded-2xl text-red-400 text-sm animate-pulse">
-                {error}
-              </div>
-            )}
-
-            {/* Grid display */}
-            {loading || aiLoading ? (
-              // Loading Skeleton
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[1, 2, 3, 4].map((num) => (
-                  <div key={num} className="bg-dark-900/30 border border-slate-900 p-6 rounded-3xl flex flex-col justify-between h-80 animate-pulse">
-                    <div>
-                      <div className="flex gap-4 mb-4">
-                        <div className="w-14 h-14 bg-slate-800 rounded-2xl shrink-0"></div>
-                        <div className="flex-1 space-y-2 py-1">
-                          <div className="h-4 bg-slate-800 rounded w-3/4"></div>
-                          <div className="h-3 bg-slate-800 rounded w-1/2"></div>
-                        </div>
-                      </div>
-                      <div className="h-3 bg-slate-800 rounded w-1/3 mb-4"></div>
-                      <div className="space-y-2 mb-6">
-                        <div className="h-3 bg-slate-800 rounded w-full"></div>
-                        <div className="h-3 bg-slate-800 rounded w-5/6"></div>
-                      </div>
-                    </div>
-                    <div className="h-10 bg-slate-800 rounded-xl w-full"></div>
-                  </div>
-                ))}
-              </div>
-            ) : isAiMode && aiMatches.length === 0 ? (
-              // Empty State
-              <div className="flex flex-col items-center justify-center p-12 bg-dark-900/25 border border-slate-900/50 rounded-3xl text-center max-w-lg mx-auto mt-6 backdrop-blur-md">
-                <h3 className="text-xl font-bold text-white mb-2">No AI Matches Found</h3>
-                <p className="text-slate-400 text-xs mb-6 max-w-sm">
-                  The AI couldn't generate matches. Try rephrasing your mentorship goals or ensure the mentor database is not empty.
-                </p>
-                <button
-                  onClick={handleExitAiMode}
-                  className="py-2 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer transition-all"
-                >
-                  Exit AI Matchmaker
-                </button>
-              </div>
-            ) : isAiMode ? (
-              // AI Matches View
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {aiMatches.map((match) => (
-                  <MentorCard
-                    key={match.mentor_id}
-                    mentor={match}
-                    studentCity={student?.city}
-                  />
-                ))}
-              </div>
-            ) : mentors.length === 0 ? (
-              // Empty State
-              <div className="flex flex-col items-center justify-center p-12 bg-dark-900/25 border border-slate-900/50 rounded-3xl text-center max-w-lg mx-auto mt-6 backdrop-blur-md">
-                <div className="inline-flex p-4 rounded-2xl bg-slate-900/50 border border-slate-850 mb-4 text-slate-500">
-                  <svg className="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
+            {activeTab === 'requests' ? (
+              // Connections/Requests Tracker View
+              requestsLoading ? (
+                <div className="flex justify-center items-center py-16">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-500"></div>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">No Mentors Match Your Filters</h3>
-                <p className="text-slate-400 text-xs mb-6 max-w-sm leading-relaxed">
-                  Adjust your search terms or uncheck the locality/domain toggles to view matching profiles.
-                </p>
-                {(searchQuery || selectedDomain || localOnly) && (
+              ) : sentRequests.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-12 bg-dark-900/25 border border-slate-900/50 rounded-3xl text-center max-w-md mx-auto mt-6 backdrop-blur-md">
+                  <div className="inline-flex p-4 rounded-2xl bg-slate-900/50 border border-slate-850 mb-4 text-slate-500">
+                    <svg className="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-2">No Requests Sent</h3>
+                  <p className="text-slate-400 text-xs mb-6 max-w-xs leading-relaxed">
+                    You haven't sent any connection requests yet. Find a mentor you like and click "Request Connection".
+                  </p>
                   <button
-                    onClick={handleClearFilters}
-                    className="py-2.5 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer transition-all duration-300"
+                    onClick={() => setActiveTab('browse')}
+                    className="py-2.5 px-5 rounded-xl bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white font-bold text-xs cursor-pointer transition-all duration-300 shadow-md"
                   >
-                    Clear Filters
+                    Browse Mentors
                   </button>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="space-y-4 font-sans">
+                  {sentRequests.map((req) => {
+                    const isExpanded = !!expandedRequests[req.id];
+                    let statusColor = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+                    if (req.status === 'accepted') statusColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+                    if (req.status === 'declined') statusColor = 'text-red-400 bg-red-500/10 border-red-500/20';
+
+                    return (
+                      <div 
+                        key={req.id}
+                        className="bg-dark-900/40 border border-slate-900 rounded-3xl p-6 shadow-md hover:border-slate-800/80 transition-all duration-300"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary-600 to-indigo-500 flex items-center justify-center text-white font-extrabold text-lg shadow-md shrink-0">
+                              {req.mentor?.name ? req.mentor.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2) : 'M'}
+                            </div>
+                            <div>
+                              <h4 className="text-white font-bold text-base leading-snug">{req.mentor?.name}</h4>
+                              <p className="text-slate-400 text-xs flex items-center gap-1">
+                                <svg className="w-3.5 h-3.5 text-slate-550" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                </svg>
+                                {req.mentor?.city}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 self-start sm:self-center">
+                            <span className={`py-1.5 px-3 rounded-lg border text-xs font-black uppercase tracking-wider ${statusColor}`}>
+                              {req.status}
+                            </span>
+                            
+                            <button
+                              onClick={() => toggleRequestExpand(req.id)}
+                              className="py-1.5 px-3 rounded-lg bg-slate-950 border border-slate-900 text-slate-400 hover:text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                            >
+                              {isExpanded ? 'Hide Details' : 'View Details'}
+                              <svg className={`w-3.5 h-3.5 transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Collapsible Details */}
+                        {isExpanded && (
+                          <div className="mt-6 pt-5 border-t border-slate-900/85 space-y-4 text-sm animate-fadeIn">
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-black text-slate-450 uppercase tracking-widest block">1. What specifically do you want to learn or achieve?</span>
+                              <p className="text-slate-200 bg-slate-950/40 p-3.5 rounded-2xl border border-slate-950/60 leading-relaxed font-medium">
+                                {req.answer_1}
+                              </p>
+                            </div>
+
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-black text-slate-450 uppercase tracking-widest block">2. What have you already tried or explored on your own?</span>
+                              <p className="text-slate-200 bg-slate-950/40 p-3.5 rounded-2xl border border-slate-950/60 leading-relaxed font-medium">
+                                {req.answer_2}
+                              </p>
+                            </div>
+
+                            <div className="space-y-1">
+                              <span className="text-[10px] font-black text-slate-450 uppercase tracking-widest block">3. What is your concrete ask for the first session?</span>
+                              <p className="text-slate-200 bg-slate-950/40 p-3.5 rounded-2xl border border-slate-950/60 leading-relaxed font-medium">
+                                {req.answer_3}
+                              </p>
+                            </div>
+
+                            <div className="text-[10px] text-slate-500 flex justify-between pt-1 font-mono">
+                              <span>Sent on {new Date(req.created_at).toLocaleDateString()}</span>
+                              <span>Request ID: #{req.id}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )
             ) : (
-              // Standard Grid View of Mentors
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {mentors.map((mentor) => (
-                  <MentorCard
-                    key={mentor.id}
-                    mentor={mentor}
-                    studentCity={student?.city}
-                  />
-                ))}
-              </div>
+              <>
+                {/* Filter tags header */}
+                <div className="flex flex-wrap items-center justify-between gap-4 py-2">
+                  <div className="text-xs text-slate-400">
+                    {isAiMode ? (
+                      <span className="flex items-center gap-1.5 font-bold text-indigo-400">
+                        <span className="animate-pulse">⚡</span> AI Matchmaker active: showing {aiMatches.length} sorted recommendations ({aiProvider === 'anthropic' ? 'Claude' : 'GPT'})
+                      </span>
+                    ) : (
+                      <span>Showing <strong className="text-white">{mentors.length}</strong> available mentors</span>
+                    )}
+                  </div>
+
+                  {/* Reset filter button */}
+                  {(searchQuery || selectedDomain || localOnly || isAiMode) && (
+                    <button
+                      onClick={handleClearFilters}
+                      className="py-1 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Clear All Filters
+                    </button>
+                  )}
+                </div>
+
+                {/* Error banner */}
+                {error && (
+                  <div className="p-4 bg-red-500/10 border border-red-500/25 rounded-2xl text-red-400 text-sm animate-pulse">
+                    {error}
+                  </div>
+                )}
+
+                {/* Grid display */}
+                {loading || aiLoading ? (
+                  // Loading Skeleton
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[1, 2, 3, 4].map((num) => (
+                      <div key={num} className="bg-dark-900/30 border border-slate-900 p-6 rounded-3xl flex flex-col justify-between h-80 animate-pulse">
+                        <div>
+                          <div className="flex gap-4 mb-4">
+                            <div className="w-14 h-14 bg-slate-800 rounded-2xl shrink-0"></div>
+                            <div className="flex-1 space-y-2 py-1">
+                              <div className="h-4 bg-slate-800 rounded w-3/4"></div>
+                              <div className="h-3 bg-slate-800 rounded w-1/2"></div>
+                            </div>
+                          </div>
+                          <div className="h-3 bg-slate-800 rounded w-1/3 mb-4"></div>
+                          <div className="space-y-2 mb-6">
+                            <div className="h-3 bg-slate-800 rounded w-full"></div>
+                            <div className="h-3 bg-slate-800 rounded w-5/6"></div>
+                          </div>
+                        </div>
+                        <div className="h-10 bg-slate-800 rounded-xl w-full"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : isAiMode && aiMatches.length === 0 ? (
+                  // Empty State
+                  <div className="flex flex-col items-center justify-center p-12 bg-dark-900/25 border border-slate-900/50 rounded-3xl text-center max-w-lg mx-auto mt-6 backdrop-blur-md">
+                    <h3 className="text-xl font-bold text-white mb-2">No AI Matches Found</h3>
+                    <p className="text-slate-400 text-xs mb-6 max-w-sm">
+                      The AI couldn't generate matches. Try rephrasing your mentorship goals or ensure the mentor database is not empty.
+                    </p>
+                    <button
+                      onClick={handleExitAiMode}
+                      className="py-2 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer transition-all"
+                    >
+                      Exit AI Matchmaker
+                    </button>
+                  </div>
+                ) : isAiMode ? (
+                  // AI Matches View
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {aiMatches.map((match) => (
+                      <MentorCard
+                        key={match.mentor_id}
+                        mentor={match}
+                        studentCity={student?.city}
+                      />
+                    ))}
+                  </div>
+                ) : mentors.length === 0 ? (
+                  // Empty State
+                  <div className="flex flex-col items-center justify-center p-12 bg-dark-900/25 border border-slate-900/50 rounded-3xl text-center max-w-lg mx-auto mt-6 backdrop-blur-md">
+                    <div className="inline-flex p-4 rounded-2xl bg-slate-900/50 border border-slate-850 mb-4 text-slate-500">
+                      <svg className="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">No Mentors Match Your Filters</h3>
+                    <p className="text-slate-400 text-xs mb-6 max-w-sm leading-relaxed">
+                      Adjust your search terms or uncheck the locality/domain toggles to view matching profiles.
+                    </p>
+                    {(searchQuery || selectedDomain || localOnly) && (
+                      <button
+                        onClick={handleClearFilters}
+                        className="py-2.5 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer transition-all duration-300"
+                      >
+                        Clear Filters
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  // Standard Grid View of Mentors
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {mentors.map((mentor) => (
+                      <MentorCard
+                        key={mentor.id}
+                        mentor={mentor}
+                        studentCity={student?.city}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
 

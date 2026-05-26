@@ -1,8 +1,19 @@
 import datetime
+import enum
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, JSON, Index, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.mutable import MutableList
 from .database import Base
+
+class RequestStatus(str, enum.Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    DECLINED = "declined"
+
+class ConnectionStatus(str, enum.Enum):
+    ACTIVE = "active"
+    PAUSED = "paused"
+    COMPLETED = "completed"
 
 class User(Base):
     __tablename__ = "users"
@@ -99,8 +110,9 @@ class ConnectionRequest(Base):
     answer_1 = Column(String, nullable=False)  # What specifically do you want to learn or achieve?
     answer_2 = Column(String, nullable=False)  # What have you already tried or explored on your own?
     answer_3 = Column(String, nullable=False)  # What is your concrete ask for the first session?
-    status = Column(String, default="pending", nullable=False)  # pending, accepted, declined
+    status = Column(String, default=RequestStatus.PENDING.value, nullable=False)  # pending, accepted, declined
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
     # Relationships
     student = relationship("User", foreign_keys=[student_id], back_populates="sent_requests")
@@ -152,6 +164,7 @@ class MentorshipConnection(Base):
     student_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     mentor_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     created_from_request_id = Column(Integer, ForeignKey("connection_requests.id", ondelete="CASCADE"), nullable=False)
+    status = Column(String, default=ConnectionStatus.ACTIVE.value, nullable=False)  # active, paused, completed
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     # Relationships

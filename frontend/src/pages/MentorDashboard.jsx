@@ -16,6 +16,12 @@ export default function MentorDashboard() {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [mentorUser, setMentorUser] = useState(null);
   
+  // Requests list states
+  const [activeTab, setActiveTab] = useState('inbox'); // 'inbox' or 'settings'
+  const [receivedRequests, setReceivedRequests] = useState([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [expandedRequests, setExpandedRequests] = useState({});
+
   // Real-time calculated stats from DB profile
   const [stats, setStats] = useState({
     avgRating: 0.0,
@@ -32,6 +38,18 @@ export default function MentorDashboard() {
     if (profile.max_sessions_per_month > 0) score += 10;
     setStats((prev) => ({ ...prev, profileStrength: score }));
   }, [profile]);
+
+  const fetchReceivedRequestsList = async () => {
+    setRequestsLoading(true);
+    try {
+      const res = await client.get('/requests/received');
+      setReceivedRequests(res.data);
+    } catch (err) {
+      console.error("Failed to load received requests:", err);
+    } finally {
+      setRequestsLoading(false);
+    }
+  };
 
   // Load current mentor user details and profile details
   useEffect(() => {
@@ -54,6 +72,9 @@ export default function MentorDashboard() {
           sessionCount: data.session_count || 0,
           profileStrength: 0, // calculated in the other useEffect
         });
+
+        // Load requests inbox
+        await fetchReceivedRequestsList();
       } catch (err) {
         if (err.response?.status === 404) {
           setMessage({
@@ -117,6 +138,45 @@ export default function MentorDashboard() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleRequestResponse = async (requestId, newStatus) => {
+    setMessage({ type: '', text: '' });
+    try {
+      await client.patch(`/requests/${requestId}`, { status: newStatus });
+      setMessage({
+        type: 'success',
+        text: `Request was successfully ${newStatus === 'accepted' ? 'accepted' : 'declined'}.`
+      });
+      await fetchReceivedRequestsList();
+    } catch (err) {
+      setMessage({
+        type: 'error',
+        text: err.response?.data?.detail || 'Failed to update request status.'
+      });
+    }
+  };
+
+  const toggleRequestExpand = (id) => {
+    setExpandedRequests(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  const formatTimeAgo = (dateStr) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHr = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHr / 24);
+
+    if (diffSec < 60) return 'Just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    if (diffHr < 24) return `${diffHr}h ago`;
+    return `${diffDay}d ago`;
   };
 
   const handleSignOut = () => {
@@ -214,7 +274,7 @@ export default function MentorDashboard() {
           <div className="p-6 bg-gradient-to-br from-indigo-950/30 to-dark-900 border border-indigo-500/20 rounded-2xl flex items-center gap-4 shadow-md hover:border-indigo-400/30 transition-all duration-300 group">
             <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center border border-indigo-500/20 text-indigo-400 group-hover:scale-105 transition-transform duration-300">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 009 11V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h3a2 2 0 002-2v-3.571" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 009 11V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h3a2 2 0 002-2v-3.571M12 11c0-3.517 1.009-6.799 2.753-9.571m3.44 2.04l-.054.09A13.916 13.916 0 0115 11v7a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-3a2 2 0 00-2 2v3.571" />
               </svg>
             </div>
             <div>
@@ -250,6 +310,37 @@ export default function MentorDashboard() {
           </div>
         </div>
 
+        {/* Tab Headers */}
+        <div className="flex border-b border-slate-900 gap-6">
+          <button
+            onClick={() => setActiveTab('inbox')}
+            className={`pb-3 font-bold text-sm transition-all relative cursor-pointer flex items-center gap-2 ${
+              activeTab === 'inbox' ? 'text-primary-400' : 'text-slate-450 hover:text-white'
+            }`}
+          >
+            Received Requests Inbox
+            {receivedRequests.filter(r => r.status === 'pending').length > 0 && (
+              <span className="py-0.5 px-2 text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full font-black animate-pulse">
+                {receivedRequests.filter(r => r.status === 'pending').length} pending
+              </span>
+            )}
+            {activeTab === 'inbox' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-500 rounded-full"></div>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`pb-3 font-bold text-sm transition-all relative cursor-pointer ${
+              activeTab === 'settings' ? 'text-primary-400' : 'text-slate-455 hover:text-white'
+            }`}
+          >
+            Profile & Matching Settings
+            {activeTab === 'settings' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-500 rounded-full"></div>
+            )}
+          </button>
+        </div>
+
         {/* Info alerts */}
         {message.text && (
           <div className={`p-4 border rounded-2xl text-sm flex items-start gap-3 ${
@@ -266,97 +357,222 @@ export default function MentorDashboard() {
           </div>
         )}
 
-        {/* Profile Editing Form */}
-        <form onSubmit={handleSubmit} className="bg-dark-900/40 border border-slate-900 backdrop-blur-xl p-8 rounded-3xl space-y-6 shadow-xl">
-          {/* Domains field */}
-          <div>
-            <label htmlFor="domains" className="text-xs font-bold text-slate-300 block mb-2 uppercase tracking-wider">
-              Expert Domains (Comma separated)
-            </label>
-            <input
-              type="text"
-              name="domains"
-              id="domains"
-              required
-              value={profile.domains}
-              onChange={handleChange}
-              placeholder="e.g. Web Development, AI/ML, UI/UX Design"
-              className="w-full bg-slate-950 border border-slate-800/85 text-white rounded-2xl px-4 py-3.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all text-sm"
-            />
-            <span className="text-slate-500 text-[10px] mt-1.5 block">Separate each domain with a comma (e.g. AI/ML, Data Science)</span>
-          </div>
-
-          {/* Max Sessions Limit */}
-          <div>
-            <label htmlFor="max_sessions_per_month" className="text-xs font-bold text-slate-300 block mb-2 uppercase tracking-wider">
-              Max Connection Sessions Per Month
-            </label>
-            <input
-              type="number"
-              name="max_sessions_per_month"
-              id="max_sessions_per_month"
-              required
-              min="1"
-              max="20"
-              value={profile.max_sessions_per_month}
-              onChange={handleChange}
-              className="w-32 bg-slate-950 border border-slate-800/85 text-white rounded-2xl px-4 py-3.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all text-sm"
-            />
-          </div>
-
-          {/* Bio area */}
-          <div>
-            <label htmlFor="bio" className="text-xs font-bold text-slate-300 block mb-2 uppercase tracking-wider">
-              Short Professional Bio
-            </label>
-            <textarea
-              name="bio"
-              id="bio"
-              required
-              rows="4"
-              value={profile.bio}
-              onChange={handleChange}
-              placeholder="Describe your role, academic background, or goals to help students find you..."
-              className="w-full bg-slate-950 border border-slate-800/85 text-white rounded-2xl px-4 py-3.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all text-sm resize-none"
-            ></textarea>
-          </div>
-
-          {/* Discuss details */}
-          <div>
-            <label htmlFor="what_ill_discuss" className="text-xs font-bold text-slate-300 block mb-2 uppercase tracking-wider">
-              What are you open to discuss?
-            </label>
-            <textarea
-              name="what_ill_discuss"
-              id="what_ill_discuss"
-              required
-              rows="3"
-              value={profile.what_ill_discuss}
-              onChange={handleChange}
-              placeholder="e.g. I am open to discussing resume reviews, entry-level interview prep, or academic research methodologies."
-              className="w-full bg-slate-950 border border-slate-800/85 text-white rounded-2xl px-4 py-3.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all text-sm resize-none"
-            ></textarea>
-          </div>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white font-bold text-base shadow-lg shadow-primary-600/15 hover:shadow-primary-500/25 active:scale-[0.98] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
-          >
-            {saving ? (
-              <>
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        {activeTab === 'inbox' ? (
+          // Received Requests CRM list
+          requestsLoading ? (
+            <div className="flex justify-center items-center py-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-500"></div>
+            </div>
+          ) : receivedRequests.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-12 bg-dark-900/25 border border-slate-900/50 rounded-3xl text-center max-w-md mx-auto mt-6 backdrop-blur-md">
+              <div className="inline-flex p-4 rounded-2xl bg-slate-900/50 border border-slate-850 mb-4 text-slate-500">
+                <svg className="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0V9a2 2 0 00-2-2H6a2 2 0 00-2 2v4m16 4h-2.586a1 1 0 01-.707-.293l-2.414-2.414a1 1 0 00-.707-.293h-3.172a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293H4" />
                 </svg>
-                Saving settings...
-              </>
-            ) : (
-              'Save Profile Settings'
-            )}
-          </button>
-        </form>
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Inbox Empty</h3>
+              <p className="text-slate-400 text-xs leading-relaxed max-w-xs text-center">
+                You haven't received any connection invitations yet. Complete your profile matching rules so students can find you!
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4 font-sans">
+              {receivedRequests.map((req) => {
+                const isExpanded = !!expandedRequests[req.id];
+                let statusColor = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+                if (req.status === 'accepted') statusColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+                if (req.status === 'declined') statusColor = 'text-red-400 bg-red-500/10 border-red-500/20';
+
+                return (
+                  <div 
+                    key={req.id}
+                    className="bg-dark-900/40 border border-slate-900 rounded-3xl p-6 shadow-md hover:border-slate-800/80 transition-all duration-300"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      {/* Left: Collapsed details */}
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary-600 to-indigo-500 flex items-center justify-center text-white font-extrabold text-lg shadow-md shrink-0">
+                          {req.student?.name ? req.student.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2) : 'S'}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-white font-bold text-base leading-snug">{req.student?.name}</h4>
+                            <span className="text-[10px] text-slate-500">•</span>
+                            <span className="text-[10px] text-slate-400 font-medium">{formatTimeAgo(req.created_at)}</span>
+                          </div>
+                          <p className="text-slate-400 text-xs flex items-center gap-1 mt-0.5">
+                            <svg className="w-3.5 h-3.5 text-slate-550" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            </svg>
+                            {req.student?.city}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right: Actions & Status */}
+                      <div className="flex items-center gap-3 self-start sm:self-center">
+                        <span className={`py-1.5 px-3 rounded-lg border text-xs font-black uppercase tracking-wider ${statusColor}`}>
+                          {req.status}
+                        </span>
+                        
+                        <button
+                          onClick={() => toggleRequestExpand(req.id)}
+                          className="py-1.5 px-3 rounded-lg bg-slate-950 border border-slate-900 text-slate-400 hover:text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                        >
+                          {isExpanded ? 'Hide Answers' : 'View Answers'}
+                          <svg className={`w-3.5 h-3.5 transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Expanded Details */}
+                    {isExpanded && (
+                      <div className="mt-6 pt-5 border-t border-slate-900/80 space-y-5 text-sm animate-fadeIn">
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] font-black text-slate-450 uppercase tracking-widest block">1. What specifically do you want to learn or achieve?</span>
+                          <p className="text-slate-200 bg-slate-950/40 p-4 rounded-2xl border border-slate-950/60 leading-relaxed font-medium">
+                            {req.answer_1}
+                          </p>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] font-black text-slate-450 uppercase tracking-widest block">2. What have you already tried or explored on your own?</span>
+                          <p className="text-slate-200 bg-slate-950/40 p-4 rounded-2xl border border-slate-950/60 leading-relaxed font-medium">
+                            {req.answer_2}
+                          </p>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] font-black text-slate-450 uppercase tracking-widest block">3. What is your concrete ask for the first session?</span>
+                          <p className="text-slate-200 bg-slate-950/40 p-4 rounded-2xl border border-slate-950/60 leading-relaxed font-medium">
+                            {req.answer_3}
+                          </p>
+                        </div>
+
+                        {req.status === 'pending' && (
+                          <div className="flex gap-4 pt-2 border-t border-slate-950/50">
+                            <button
+                              onClick={() => handleRequestResponse(req.id, 'accepted')}
+                              className="flex-1 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs cursor-pointer shadow-md shadow-emerald-950/10 transition-colors flex items-center justify-center gap-1.5"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                              </svg>
+                              Accept Request
+                            </button>
+                            <button
+                              onClick={() => handleRequestResponse(req.id, 'declined')}
+                              className="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-750 font-bold text-xs cursor-pointer transition-colors flex items-center justify-center gap-1.5"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              Decline Request
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )
+        ) : (
+          // Settings Tab: Profile form
+          <form onSubmit={handleSubmit} className="bg-dark-900/40 border border-slate-900 backdrop-blur-xl p-8 rounded-3xl space-y-6 shadow-xl">
+            {/* Domains field */}
+            <div>
+              <label htmlFor="domains" className="text-xs font-bold text-slate-350 block mb-2 uppercase tracking-wider font-mono">
+                Expert Domains (Comma separated)
+              </label>
+              <input
+                type="text"
+                name="domains"
+                id="domains"
+                required
+                value={profile.domains}
+                onChange={handleChange}
+                placeholder="e.g. Web Development, AI/ML, UI/UX Design"
+                className="w-full bg-slate-950 border border-slate-800/85 text-white rounded-2xl px-4 py-3.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all text-sm"
+              />
+              <span className="text-slate-500 text-[10px] mt-1.5 block">Separate each domain with a comma (e.g. AI/ML, Data Science)</span>
+            </div>
+
+            {/* Max Sessions Limit */}
+            <div>
+              <label htmlFor="max_sessions_per_month" className="text-xs font-bold text-slate-350 block mb-2 uppercase tracking-wider font-mono">
+                Max Connection Sessions Per Month
+              </label>
+              <input
+                type="number"
+                name="max_sessions_per_month"
+                id="max_sessions_per_month"
+                required
+                min="1"
+                max="20"
+                value={profile.max_sessions_per_month}
+                onChange={handleChange}
+                className="w-32 bg-slate-950 border border-slate-800/85 text-white rounded-2xl px-4 py-3.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all text-sm"
+              />
+            </div>
+
+            {/* Bio area */}
+            <div>
+              <label htmlFor="bio" className="text-xs font-bold text-slate-350 block mb-2 uppercase tracking-wider font-mono">
+                Short Professional Bio
+              </label>
+              <textarea
+                name="bio"
+                id="bio"
+                required
+                rows="4"
+                value={profile.bio}
+                onChange={handleChange}
+                placeholder="Describe your role, academic background, or goals to help students find you..."
+                className="w-full bg-slate-950 border border-slate-800/85 text-white rounded-2xl px-4 py-3.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all text-sm resize-none"
+              ></textarea>
+            </div>
+
+            {/* Discuss details */}
+            <div>
+              <label htmlFor="what_ill_discuss" className="text-xs font-bold text-slate-350 block mb-2 uppercase tracking-wider font-mono">
+                What are you open to discuss?
+              </label>
+              <textarea
+                name="what_ill_discuss"
+                id="what_ill_discuss"
+                required
+                rows="3"
+                value={profile.what_ill_discuss}
+                onChange={handleChange}
+                placeholder="e.g. I am open to discussing resume reviews, entry-level interview prep, or academic research methodologies."
+                className="w-full bg-slate-950 border border-slate-800/85 text-white rounded-2xl px-4 py-3.5 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30 transition-all text-sm resize-none"
+              ></textarea>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white font-bold text-base shadow-lg shadow-primary-600/15 hover:shadow-primary-500/25 active:scale-[0.98] transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+            >
+              {saving ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving settings...
+                </>
+              ) : (
+                'Save Profile Settings'
+              )}
+            </button>
+          </form>
+        )}
       </main>
     </div>
   );

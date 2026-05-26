@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import client from '../api/client';
+import IntentForm from '../components/IntentForm';
 
 export default function MentorProfile() {
   const { id } = useParams(); // user_id of the mentor
@@ -9,9 +10,27 @@ export default function MentorProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // Connection modal state (Day 4 preview)
+  // Connection modal state
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [studentCity, setStudentCity] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
+  const [existingRequest, setExistingRequest] = useState(null);
+
+  const fetchSentRequests = async (userRole) => {
+    if (userRole === 'student') {
+      try {
+        const res = await client.get('/requests/sent');
+        const req = res.data.find(r => r.mentor_id === parseInt(id));
+        if (req) {
+          setExistingRequest(req);
+        } else {
+          setExistingRequest(null);
+        }
+      } catch (err) {
+        console.error('Error fetching sent requests:', err);
+      }
+    }
+  };
 
   // Fetch mentor profile details
   useEffect(() => {
@@ -27,6 +46,13 @@ export default function MentorProfile() {
         if (studentDetails) {
           const sObj = JSON.parse(studentDetails);
           setStudentCity(sObj.city || '');
+        }
+
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const u = JSON.parse(userStr);
+          setCurrentUser(u);
+          await fetchSentRequests(u.role);
         }
       } catch (err) {
         setError(err.response?.data?.detail || 'Failed to load mentor profile.');
@@ -227,83 +253,57 @@ export default function MentorProfile() {
               <p className="text-slate-300 text-sm leading-relaxed bg-slate-950/30 p-4 rounded-2xl border border-slate-900/80">
                 {what_ill_discuss || "Topics have not been specified. Reach out to coordinate an agenda!"}
               </p>
-            </div>
-
-            {/* Connect Call-to-action */}
-            <button
-              onClick={() => setShowConnectModal(true)}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white font-black text-base shadow-lg shadow-primary-600/15 hover:shadow-primary-500/25 transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer"
-            >
-              Request Connection
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </button>
+            </div>            {/* Connect Call-to-action */}
+            {currentUser?.role === 'student' ? (
+              <div className="space-y-3">
+                {existingRequest?.status === 'pending' ? (
+                  <div className="w-full py-4 px-6 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-black text-base text-center flex items-center justify-center gap-2.5 shadow-sm">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                    Pending Approval
+                  </div>
+                ) : existingRequest?.status === 'accepted' ? (
+                  <div className="w-full py-4 px-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black text-base text-center flex items-center justify-center gap-2.5 shadow-sm">
+                    <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Connected
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setShowConnectModal(true)}
+                      className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white font-black text-base shadow-lg shadow-primary-600/15 hover:shadow-primary-500/25 transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer"
+                    >
+                      Request Connection
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </button>
+                    {existingRequest?.status === 'declined' && (
+                      <p className="text-xs text-slate-400 text-center leading-normal">
+                        Your previous request was declined. You can submit a new request with updated details.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="w-full py-4 px-6 rounded-2xl bg-slate-900 border border-slate-800 text-slate-500 font-bold text-center text-sm">
+                Logged in as Mentor
+              </div>
+            )}
           </div>
         </div>
 
       </div>
-      {/* Connection Modal (Day 4 Preview Dialog) */}
+
       {showConnectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 overflow-x-hidden overflow-y-auto">
-          {/* Fixed Backdrop overlay spanning entire viewport */}
-          <div 
-            className="fixed inset-0 bg-dark-950/85 backdrop-blur-md transition-opacity duration-350 cursor-pointer" 
-            onClick={() => setShowConnectModal(false)}
-          ></div>
-          
-          {/* Dialog box centered perfectly with margin spacing */}
-          <div className="bg-dark-900 border border-slate-800 p-6 md:p-8 rounded-3xl max-w-lg w-full relative z-10 shadow-2xl space-y-6 transform scale-100 transition-all duration-300">
-            <button 
-              onClick={() => setShowConnectModal(false)}
-              className="absolute top-5 right-5 text-slate-450 hover:text-white transition-colors duration-200 cursor-pointer p-1.5 rounded-lg bg-slate-950/20 hover:bg-slate-900 border border-transparent hover:border-slate-800"
-              aria-label="Close modal"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            <div className="space-y-2">
-              <div className="inline-flex items-center justify-center p-2.5 bg-primary-500/10 rounded-2xl border border-primary-500/20 text-primary-400">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </div>
-              <h3 className="text-2xl font-extrabold text-white">Intent-Gated Connection</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                MentorMesh eliminates cold, generic networking requests. To request a session with <strong>{user?.name}</strong>, you will need to fill out 3 structured questions.
-              </p>
-            </div>
-
-            <div className="p-4 bg-slate-950 border border-slate-900 rounded-2xl space-y-3 text-xs leading-relaxed text-slate-400">
-              <div className="font-bold text-slate-300">The 3 Required Questions (Day 4 Feature):</div>
-              <ol className="list-decimal list-inside space-y-1.5">
-                <li>What specifically do you want to learn or achieve?</li>
-                <li>What have you already tried or explored on your own?</li>
-                <li>What is your concrete ask for the first session?</li>
-              </ol>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setShowConnectModal(false)}
-                className="flex-1 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm cursor-pointer border border-slate-700 transition-colors"
-              >
-                Go Back
-              </button>
-              <button
-                onClick={() => {
-                  alert("Day 4 Intent-Gated request flow is coming up in our roadmap! Stay tuned.");
-                  setShowConnectModal(false);
-                }}
-                className="flex-1 py-3.5 rounded-2xl bg-primary-500 hover:bg-primary-400 text-dark-950 font-bold text-sm cursor-pointer transition-colors"
-              >
-                Got It!
-              </button>
-            </div>
-          </div>
-        </div>
+        <IntentForm
+          mentorId={id}
+          mentorName={user?.name}
+          onClose={() => setShowConnectModal(false)}
+          onSuccess={() => fetchSentRequests(currentUser?.role)}
+        />
       )}
 
     </div>
