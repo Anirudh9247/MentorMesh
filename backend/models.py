@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, JSON
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, JSON, Index, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.mutable import MutableList
 from .database import Base
@@ -51,6 +51,23 @@ class User(Base):
         cascade="all, delete-orphan"
     )
 
+    # Mentorship connections where this user is the student
+    student_connections = relationship(
+        "MentorshipConnection",
+        foreign_keys="MentorshipConnection.student_id",
+        back_populates="student",
+        cascade="all, delete-orphan"
+    )
+
+    # Mentorship connections where this user is the mentor
+    mentor_connections = relationship(
+        "MentorshipConnection",
+        foreign_keys="MentorshipConnection.mentor_id",
+        back_populates="mentor",
+        cascade="all, delete-orphan"
+    )
+
+
 
 class MentorProfile(Base):
     __tablename__ = "mentor_profiles"
@@ -71,6 +88,11 @@ class MentorProfile(Base):
 class ConnectionRequest(Base):
     __tablename__ = "connection_requests"
 
+    __table_args__ = (
+        Index("idx_student_mentor", "student_id", "mentor_id"),
+        UniqueConstraint("student_id", "mentor_id", "status", name="uq_student_mentor_status")
+    )
+
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     mentor_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
@@ -84,6 +106,7 @@ class ConnectionRequest(Base):
     student = relationship("User", foreign_keys=[student_id], back_populates="sent_requests")
     mentor = relationship("User", foreign_keys=[mentor_id], back_populates="received_requests")
     session = relationship("Session", back_populates="connection_request", uselist=False, cascade="all, delete-orphan")
+    connection = relationship("MentorshipConnection", back_populates="request", uselist=False, cascade="all, delete-orphan")
 
 
 class Session(Base):
@@ -115,3 +138,24 @@ class Review(Base):
 
     # Relationships
     session = relationship("Session", back_populates="review")
+
+
+class MentorshipConnection(Base):
+    __tablename__ = "mentorship_connections"
+
+    __table_args__ = (
+        Index("idx_conn_student_mentor", "student_id", "mentor_id"),
+        UniqueConstraint("student_id", "mentor_id", name="uq_conn_student_mentor")
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    mentor_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_from_request_id = Column(Integer, ForeignKey("connection_requests.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    # Relationships
+    student = relationship("User", foreign_keys=[student_id], back_populates="student_connections")
+    mentor = relationship("User", foreign_keys=[mentor_id], back_populates="mentor_connections")
+    request = relationship("ConnectionRequest", back_populates="connection")
+

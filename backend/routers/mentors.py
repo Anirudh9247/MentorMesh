@@ -4,8 +4,9 @@ from typing import Optional
 
 from ..database import get_db
 from ..models import User, MentorProfile
-from ..schemas import MentorProfileCreate, MentorProfileUpdate, MentorProfileRead
+from ..schemas import MentorProfileCreate, MentorProfileUpdate, MentorProfileRead, MatchRequest, MatchResult
 from ..auth import get_current_user
+from ..services.match import run_ai_match
 
 router = APIRouter(prefix="/mentors", tags=["Mentors"])
 
@@ -151,3 +152,55 @@ def get_mentor_by_user_id(
         )
 
     return profile
+
+
+# ─────────────────────────────────────────────
+# POST AI matching recommendations
+# ─────────────────────────────────────────────
+@router.post("/match", response_model=list[MatchResult])
+def match_mentors(
+    payload: MatchRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # Fetch all mentors who have set up their profiles
+    mentor_profiles = db.query(MentorProfile).all()
+    if not mentor_profiles:
+        return []
+
+    # Format SQLAlchemy model instances into dictionary representations for the matching service
+    mentors_list = []
+    for mp in mentor_profiles:
+        # Avoid matching the user with themselves if they are registered as a mentor
+        if mp.user_id == current_user.id:
+            continue
+            
+        mentors_list.append({
+            "id": mp.id,
+            "user_id": mp.user_id,
+            "domains": mp.domains,
+            "bio": mp.bio,
+            "max_sessions_per_month": mp.max_sessions_per_month,
+            "what_ill_discuss": mp.what_ill_discuss,
+            "avg_rating": mp.avg_rating,
+            "session_count": mp.session_count,
+            "user": {
+                "id": mp.user.id,
+                "name": mp.user.name,
+                "email": mp.user.email,
+                "role": mp.user.role,
+                "city": mp.user.city,
+                "created_at": mp.user.created_at
+            }
+        })
+
+    # Call LLM wrapper function
+    matches = run_ai_match(
+        student_goals=payload.student_goal,
+        student_city=current_user.city,
+        mentors=mentors_list,
+        provider=payload.provider
+    )
+
+    return matches
+

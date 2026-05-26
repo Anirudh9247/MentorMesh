@@ -27,6 +27,13 @@ export default function Browse() {
   const [selectedDomain, setSelectedDomain] = useState('');
   const [localOnly, setLocalOnly] = useState(false);
 
+  // AI Matchmaker state (Day 3 Feature)
+  const [isAiMode, setIsAiMode] = useState(false);
+  const [aiGoal, setAiGoal] = useState('');
+  const [aiProvider, setAiProvider] = useState('anthropic'); // Default to anthropic Claude
+  const [aiMatches, setAiMatches] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
+
   // Fetch current user and mentors list on mount
   useEffect(() => {
     const initPage = async () => {
@@ -62,6 +69,7 @@ export default function Browse() {
   const fetchFilteredMentors = async (domainVal = selectedDomain, localOnlyVal = localOnly) => {
     setLoading(true);
     setError('');
+    setIsAiMode(false); // Disable AI matches view if student types keyword filters
     try {
       const params = {};
       if (searchQuery) params.search = searchQuery;
@@ -102,6 +110,7 @@ export default function Browse() {
     setSearchQuery('');
     setSelectedDomain('');
     setLocalOnly(false);
+    setIsAiMode(false);
     setLoading(true);
     try {
       const res = await client.get('/mentors');
@@ -111,6 +120,38 @@ export default function Browse() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle AI Matching call (Day 3 core feature)
+  const handleAiMatchSubmit = async (e) => {
+    e.preventDefault();
+    if (!aiGoal || aiGoal.trim().length < 5) {
+      alert("Please describe your goals in at least 5 characters so the AI has context to match!");
+      return;
+    }
+
+    setAiLoading(true);
+    setError('');
+    try {
+      const payload = {
+        student_goal: aiGoal,
+        provider: aiProvider
+      };
+      
+      const res = await client.post('/mentors/match', payload);
+      setAiMatches(res.data);
+      setIsAiMode(true);
+    } catch (err) {
+      setError(err.response?.data?.detail || 'AI Matching failed. Please verify API configuration.');
+      console.error(err);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleExitAiMode = () => {
+    setIsAiMode(false);
+    setAiGoal('');
   };
 
   const handleSignOut = () => {
@@ -157,32 +198,102 @@ export default function Browse() {
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-6 md:px-12 mt-8">
         
-        {/* Welcome & Overview Banner (Fills empty section, enhances hierarchy) */}
+        {/* Welcome & Overview Banner */}
         <div className="p-8 rounded-3xl bg-gradient-to-r from-primary-900/20 via-indigo-900/10 to-dark-900 border border-slate-800/60 shadow-lg mb-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-72 h-72 bg-primary-500/5 rounded-full blur-3xl pointer-events-none"></div>
           
           <div className="relative z-10 max-w-3xl space-y-3">
             <span className="text-xs font-bold uppercase tracking-widest text-primary-400 bg-primary-500/10 py-1 px-3 border border-primary-500/20 rounded-full">
-              Locality-First Platform
+              AI Matchmaker
             </span>
             <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-              Discover Mentors in <span className="bg-gradient-to-r from-primary-400 to-indigo-400 bg-clip-text text-transparent">{student?.city || 'Your City'}</span>
+              AI-Powered Local Matching
             </h1>
             <p className="text-slate-350 text-sm md:text-base leading-relaxed">
-              Bypass cold LinkedIn outreach. Find working professionals and researchers in your immediate locality, apply with a structured 3-question intent form, and coordinate structured face-to-face or virtual learning sessions.
+              Describe what you want to learn or achieve, and let our multi-model matching system rank and analyze local mentors for you instantly. Select either Anthropic Claude or OpenAI GPT-4 below.
             </p>
           </div>
         </div>
 
-        {/* 2-Column Professional Layout (Cleans up clutter & organization) */}
+        {/* 2-Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           
-          {/* Left Column: Search & Filters sidebar (1/4 width) */}
+          {/* Left Column: Search & Filters sidebar */}
           <div className="lg:col-span-1 space-y-6">
             
-            {/* Search Card */}
+            {/* AI Matchmaker card */}
+            <div className="bg-gradient-to-br from-indigo-950/20 to-dark-900 border border-indigo-500/20 p-6 rounded-3xl space-y-4 shadow-md relative overflow-hidden">
+              <div className="absolute -top-10 -left-10 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl pointer-events-none"></div>
+              
+              <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1.5">
+                <span className="text-sm">✨</span> AI Matchmaker
+              </h3>
+
+              <form onSubmit={handleAiMatchSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="aiGoal" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Your Mentorship Goals</label>
+                  <textarea
+                    id="aiGoal"
+                    required
+                    rows="4"
+                    value={aiGoal}
+                    onChange={(e) => setAiGoal(e.target.value)}
+                    placeholder="e.g. I need guidance on entry-level ML engineer interview prep or Quantum RNG research papers."
+                    className="w-full bg-slate-950 border border-slate-800/80 text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500 transition-all resize-none"
+                  ></textarea>
+                </div>
+
+                {/* AI Service Selector Toggle */}
+                <div className="space-y-1.5">
+                  <label htmlFor="aiProvider" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">AI Match Provider</label>
+                  <select
+                    id="aiProvider"
+                    value={aiProvider}
+                    onChange={(e) => setAiProvider(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800/80 text-slate-300 rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500 transition-all cursor-pointer"
+                  >
+                    <option value="anthropic">🤖 Anthropic Claude 3.5</option>
+                    <option value="openai">🧠 OpenAI GPT-4o Model</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={aiLoading}
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white font-black text-xs shadow-md shadow-primary-600/10 cursor-pointer transition-all duration-350 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-1.5"
+                >
+                  {aiLoading ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Matching...
+                    </>
+                  ) : (
+                    <>
+                      Generate AI Matches
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {isAiMode && (
+                <button
+                  onClick={handleExitAiMode}
+                  className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-350 font-bold text-xs cursor-pointer transition-all text-center"
+                >
+                  Exit AI Matchmaker
+                </button>
+              )}
+            </div>
+
+            {/* Standard Keywords card */}
             <div className="bg-dark-900/50 border border-slate-900 p-6 rounded-3xl space-y-4">
-              <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest">Search Keywords</h3>
+              <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest">Standard Search</h3>
               
               <form onSubmit={handleSearchSubmit} className="relative flex items-center">
                 <input
@@ -197,7 +308,6 @@ export default function Browse() {
                 </svg>
               </form>
 
-              {/* Local Only Checkbox Button */}
               <button
                 onClick={handleLocalToggle}
                 className={`w-full py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 border transition-all duration-300 cursor-pointer ${
@@ -213,7 +323,7 @@ export default function Browse() {
               </button>
             </div>
 
-            {/* Popular Domains selection (Pill group) */}
+            {/* Popular Domains checklist */}
             <div className="bg-dark-900/50 border border-slate-900 p-6 rounded-3xl space-y-3">
               <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest">Filter by Domain</h3>
               <div className="flex flex-col gap-1.5">
@@ -241,38 +351,25 @@ export default function Browse() {
               </div>
             </div>
 
-            {/* "How it Works" guide widget (Populates empty space beautifully) */}
-            <div className="p-6 bg-slate-950/80 border border-slate-900 rounded-3xl space-y-4">
-              <h4 className="text-xs font-bold text-primary-400 uppercase tracking-wider">How Mesh Works</h4>
-              <div className="space-y-3 text-xs text-slate-400">
-                <div className="flex gap-2">
-                  <span className="w-5 h-5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-center shrink-0 font-bold">1</span>
-                  <p>Discover matches sorted by your city first.</p>
-                </div>
-                <div className="flex gap-2">
-                  <span className="w-5 h-5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-center shrink-0 font-bold">2</span>
-                  <p>Open profile and answer the 3 validation questions.</p>
-                </div>
-                <div className="flex gap-2">
-                  <span className="w-5 h-5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-center shrink-0 font-bold">3</span>
-                  <p>Coordinate a session once accepted by the mentor.</p>
-                </div>
-              </div>
-            </div>
-
           </div>
 
-          {/* Right Column: Active Filters, Mentors Grid or empty state (3/4 width) */}
+          {/* Right Column: Active Filters, Mentors Grid */}
           <div className="lg:col-span-3 space-y-4">
             
             {/* Filter tags header */}
             <div className="flex flex-wrap items-center justify-between gap-4 py-2">
               <div className="text-xs text-slate-400">
-                Showing <strong className="text-white">{mentors.length}</strong> available mentors
+                {isAiMode ? (
+                  <span className="flex items-center gap-1.5 font-bold text-indigo-400">
+                    <span className="animate-pulse">⚡</span> AI Matchmaker active: showing {aiMatches.length} sorted recommendations ({aiProvider === 'anthropic' ? 'Claude' : 'GPT'})
+                  </span>
+                ) : (
+                  <span>Showing <strong className="text-white">{mentors.length}</strong> available mentors</span>
+                )}
               </div>
 
               {/* Reset filter button */}
-              {(searchQuery || selectedDomain || localOnly) && (
+              {(searchQuery || selectedDomain || localOnly || isAiMode) && (
                 <button
                   onClick={handleClearFilters}
                   className="py-1 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5"
@@ -280,7 +377,7 @@ export default function Browse() {
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                  Reset Active Filters
+                  Clear All Filters
                 </button>
               )}
             </div>
@@ -293,7 +390,7 @@ export default function Browse() {
             )}
 
             {/* Grid display */}
-            {loading ? (
+            {loading || aiLoading ? (
               // Loading Skeleton
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {[1, 2, 3, 4].map((num) => (
@@ -316,6 +413,31 @@ export default function Browse() {
                   </div>
                 ))}
               </div>
+            ) : isAiMode && aiMatches.length === 0 ? (
+              // Empty State
+              <div className="flex flex-col items-center justify-center p-12 bg-dark-900/25 border border-slate-900/50 rounded-3xl text-center max-w-lg mx-auto mt-6 backdrop-blur-md">
+                <h3 className="text-xl font-bold text-white mb-2">No AI Matches Found</h3>
+                <p className="text-slate-400 text-xs mb-6 max-w-sm">
+                  The AI couldn't generate matches. Try rephrasing your mentorship goals or ensure the mentor database is not empty.
+                </p>
+                <button
+                  onClick={handleExitAiMode}
+                  className="py-2 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer transition-all"
+                >
+                  Exit AI Matchmaker
+                </button>
+              </div>
+            ) : isAiMode ? (
+              // AI Matches View
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {aiMatches.map((match) => (
+                  <MentorCard
+                    key={match.mentor_id}
+                    mentor={match}
+                    studentCity={student?.city}
+                  />
+                ))}
+              </div>
             ) : mentors.length === 0 ? (
               // Empty State
               <div className="flex flex-col items-center justify-center p-12 bg-dark-900/25 border border-slate-900/50 rounded-3xl text-center max-w-lg mx-auto mt-6 backdrop-blur-md">
@@ -326,19 +448,19 @@ export default function Browse() {
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">No Mentors Match Your Filters</h3>
                 <p className="text-slate-400 text-xs mb-6 max-w-sm leading-relaxed">
-                  Adjust your search terms or uncheck the locality/domain toggles to view matching profiles across other categories and cities.
+                  Adjust your search terms or uncheck the locality/domain toggles to view matching profiles.
                 </p>
                 {(searchQuery || selectedDomain || localOnly) && (
                   <button
                     onClick={handleClearFilters}
                     className="py-2.5 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer transition-all duration-300"
                   >
-                    Clear All Active Toggles
+                    Clear Filters
                   </button>
                 )}
               </div>
             ) : (
-              // Grid View of Mentors
+              // Standard Grid View of Mentors
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {mentors.map((mentor) => (
                   <MentorCard

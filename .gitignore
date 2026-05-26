@@ -1,0 +1,42 @@
+# Local credentials and environment configurations
+.env
+.env.local
+.env.*.local
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Databases
+*.db
+*.sqlite3
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node directories and outputs
+node_modules/
+dist/
+build/
+.next/
+.docusaurus/
+out/
+.docusaurus/
+.cache/
+
+# Editor files and OS leftovers
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+Thumbs.db
+ehthumbs.db
+Desktop.ini

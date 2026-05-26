@@ -77,7 +77,7 @@ class ConnectionRequestCreate(BaseModel):
     answer_3: str = Field(..., description="What is your concrete ask for the first session?")
 
 class ConnectionRequestUpdate(BaseModel):
-    status: str = Field(..., description="Must be either 'accepted' or 'declined'")
+    status: Literal["accepted", "declined"] = Field(..., description="Must be either 'accepted' or 'declined'")
 
 class ConnectionRequestRead(BaseModel):
     id: int
@@ -87,6 +87,22 @@ class ConnectionRequestRead(BaseModel):
     answer_2: str
     answer_3: str
     status: str
+    created_at: datetime
+    student: UserRead
+    mentor: UserRead
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ==========================================
+# MENTORSHIP CONNECTION SCHEMAS
+# ==========================================
+
+class MentorshipConnectionRead(BaseModel):
+    id: int
+    student_id: int
+    mentor_id: int
+    created_from_request_id: int
     created_at: datetime
     student: UserRead
     mentor: UserRead
@@ -133,3 +149,20 @@ class ReviewRead(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# ==========================================
+# AI MATCH SCHEMAS
+# ==========================================
+
+class MatchRequest(BaseModel):
+    student_goal: str = Field(..., min_length=5, description="What specifically are you looking to achieve or learn?")
+    provider: Literal["anthropic", "openai"] = Field(default="anthropic", description="Which AI engine to use")
+
+class MatchResult(BaseModel):
+    mentor_id: int
+    user_id: int
+    score: int
+    reason: str
+    mentor_data: MentorProfileRead
+
