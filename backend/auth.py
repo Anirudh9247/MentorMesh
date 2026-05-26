@@ -1,8 +1,8 @@
 import os
 import datetime
 from typing import Optional
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -17,22 +17,31 @@ SECRET_KEY = os.getenv("JWT_SECRET", "mentormesh_local_super_secret_key_12345678
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days expiration for convenience in a hackathon demo
 
-# Password hashing configuration
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 # OAuth2 scheme configures FastAPI to read Bearer tokens from the Authorization header
-# It points to /auth/login for documentation/swagger integration
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verifies that a plain text password matches its hashed version."""
-    return pwd_context.verify(plain_password, hashed_password)
+    """
+    Verifies that a plain text password matches its hashed version using bcrypt.
+    """
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"),
+            hashed_password.encode("utf-8")
+        )
+    except Exception:
+        return False
 
 
 def get_password_hash(password: str) -> str:
-    """Hashes a password using the bcrypt algorithm."""
-    return pwd_context.hash(password)
+    """
+    Hashes a password using the bcrypt algorithm directly to ensure compatibility
+    with modern Python versions (e.g., Python 3.14) without passlib compatibility bugs.
+    """
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
+    return hashed.decode("utf-8")
 
 
 def create_access_token(data: dict, expires_delta: Optional[datetime.timedelta] = None) -> str:
