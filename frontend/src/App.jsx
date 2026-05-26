@@ -5,6 +5,7 @@ import Register from './pages/Register';
 import Browse from './pages/Browse';
 import MentorProfile from './pages/MentorProfile';
 import MentorDashboard from './pages/MentorDashboard';
+import DesignShowcase from './pages/DesignShowcase';
 
 // Simple check to enforce route protection
 // Day 2 Client Session helper
@@ -32,6 +33,7 @@ function App() {
         {/* Auth routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/design" element={<DesignShowcase />} />
         
         {/* Protected Student routes */}
         <Route 
