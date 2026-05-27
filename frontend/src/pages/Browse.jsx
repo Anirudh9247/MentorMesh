@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import MentorCard from '../components/MentorCard';
+import StudentHeader from '../components/StudentHeader';
 
 const POPULAR_DOMAINS = [
   'Web Development',
@@ -27,12 +28,17 @@ export default function Browse() {
   const [selectedDomain, setSelectedDomain] = useState('');
   const [localOnly, setLocalOnly] = useState(false);
 
-  // AI Matchmaker state (Day 3 Feature)
+  // AI Matchmaker state
   const [isAiMode, setIsAiMode] = useState(false);
   const [aiGoal, setAiGoal] = useState('');
   const [aiProvider, setAiProvider] = useState('anthropic'); // Default to anthropic Claude
   const [aiMatches, setAiMatches] = useState([]);
   const [aiLoading, setAiLoading] = useState(false);
+
+  // Live-generated loading steps state
+  const [matchLoadingStep, setMatchLoadingStep] = useState(0);
+  const [pendingMatches, setPendingMatches] = useState([]);
+  const [apiDone, setApiDone] = useState(false);
 
   // Connection Requests tab & status state
   const [activeTab, setActiveTab] = useState('browse'); // 'browse' or 'requests'
@@ -143,7 +149,7 @@ export default function Browse() {
     }
   };
 
-  // Handle AI Matching call (Day 3 core feature)
+  // Handle AI Matching call
   const handleAiMatchSubmit = async (e) => {
     e.preventDefault();
     if (!aiGoal || aiGoal.trim().length < 5) {
@@ -153,6 +159,10 @@ export default function Browse() {
 
     setAiLoading(true);
     setError('');
+    setMatchLoadingStep(0);
+    setApiDone(false);
+    setPendingMatches([]);
+
     try {
       const payload = {
         student_goal: aiGoal,
@@ -160,15 +170,38 @@ export default function Browse() {
       };
       
       const res = await client.post('/mentors/match', payload);
-      setAiMatches(res.data);
-      setIsAiMode(true);
+      setPendingMatches(res.data);
+      setApiDone(true);
     } catch (err) {
       setError(err.response?.data?.detail || 'AI Matching failed. Please verify API configuration.');
       console.error(err);
-    } finally {
       setAiLoading(false);
     }
   };
+
+  useEffect(() => {
+    let timer;
+    if (aiLoading) {
+      timer = setInterval(() => {
+        setMatchLoadingStep((prev) => {
+          if (prev >= 2) {
+            clearInterval(timer);
+            return 3;
+          }
+          return prev + 1;
+        });
+      }, 750);
+    }
+    return () => clearInterval(timer);
+  }, [aiLoading]);
+
+  useEffect(() => {
+    if (aiLoading && matchLoadingStep === 3 && apiDone) {
+      setAiMatches(pendingMatches);
+      setIsAiMode(true);
+      setAiLoading(false);
+    }
+  }, [matchLoadingStep, apiDone, pendingMatches, aiLoading]);
 
   const handleExitAiMode = () => {
     setIsAiMode(false);
@@ -194,84 +227,68 @@ export default function Browse() {
     }));
   };
 
-  const handleSignOut = () => {
-    localStorage.clear();
-    navigate('/login');
+  const formatTimeAgo = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHr = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHr / 24);
+
+    if (diffSec < 60) return 'Just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    if (diffHr < 24) return `${diffHr}h ago`;
+    return `${diffDay}d ago`;
   };
 
   return (
-    <div className="min-h-screen bg-dark-950 text-white bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary-950/15 via-dark-950 to-dark-950 pb-20 font-sans">
+    <div className="min-h-screen bg-dark-canvas text-silver pb-20 relative overflow-hidden bg-grid-dots">
+      {/* Background bleed */}
+      <div className="radial-spotlight"></div>
       
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-40 bg-dark-950/80 backdrop-blur-xl border-b border-slate-900/80 py-4.5 px-6 md:px-12 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-primary-500/10 rounded-xl border border-primary-500/25">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 009 11V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h3a2 2 0 002-2v-3.571M12 11c0-3.517 1.009-6.799 2.753-9.571m3.44 2.04l-.054.09A13.916 13.916 0 0115 11v7a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-3a2 2 0 00-2 2v3.571" />
-            </svg>
-          </div>
-          <span className="text-2xl font-black bg-gradient-to-r from-white via-slate-200 to-primary-400 bg-clip-text text-transparent tracking-tight">
-            MentorMesh
-          </span>
-        </div>
+      {/* Dynamic Header */}
+      <StudentHeader />
 
-        <div className="flex items-center gap-4">
-          <div className="hidden md:flex flex-col text-right">
-            <span className="text-sm font-bold text-slate-200">{student?.name || 'Loading student...'}</span>
-            <span className="text-xs text-primary-400 font-semibold flex items-center gap-1 justify-end">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              </svg>
-              {student?.city} (Student)
-            </span>
-          </div>
-          
-          <button
-            onClick={handleSignOut}
-            className="py-2 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold text-xs transition-all duration-300 cursor-pointer"
-          >
-            Sign Out
-          </button>
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-6 md:px-12 mt-8">
+      <main className="max-w-7xl mx-auto px-6 md:px-12 mt-10 relative z-10">
         
-        {/* Welcome & Overview Banner */}
-        <div className="p-8 rounded-3xl bg-gradient-to-r from-primary-900/20 via-indigo-900/10 to-dark-900 border border-slate-800/60 shadow-lg mb-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-72 h-72 bg-primary-500/5 rounded-full blur-3xl pointer-events-none"></div>
+        {/* Banner with mesh background */}
+        <div className="p-8 md:p-10 rounded-3xl premium-card shadow-2xl mb-10 overflow-hidden relative">
+          <div className="absolute top-1/2 -translate-y-1/2 -right-12 w-80 h-80 bg-gradient-to-r from-glow-violet/10 to-glow-blue/10 rounded-full blur-3xl pointer-events-none animate-float"></div>
           
-          <div className="relative z-10 max-w-3xl space-y-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-primary-400 bg-primary-500/10 py-1 px-3 border border-primary-500/20 rounded-full">
-              AI Matchmaker
-            </span>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-              AI-Powered Local Matching
+          <div className="relative z-10 max-w-3xl space-y-4">
+            <div className="inline-flex items-center gap-2">
+              <span className="text-[9px] font-black uppercase tracking-widest text-glow-blue bg-glow-blue/10 py-1 px-3 border border-glow-blue/20 rounded-full">
+                ✨ AI MATCHMAKING CORES
+              </span>
+            </div>
+            
+            <h1 className="text-4xl md:text-5xl font-black text-cyber-white tracking-tight leading-tight">
+              Discover Expert Local Mentors
             </h1>
-            <p className="text-slate-350 text-sm md:text-base leading-relaxed">
-              Describe what you want to learn or achieve, and let our multi-model matching system rank and analyze local mentors for you instantly. Select either Anthropic Claude or OpenAI GPT-4 below.
+            
+            <p className="text-slate-muted text-xs md:text-sm leading-relaxed max-w-2xl font-medium">
+              Filter local matches using proximity and topics. Write concrete goals to let the AI rank matching scores and explanations.
             </p>
           </div>
         </div>
 
-        {/* 2-Column Layout */}
+        {/* 2-Column Browse Layout (filters on left, grid on right) */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           
-          {/* Left Column: Search & Filters sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+          {/* Left Column: Sticky sidebar filters */}
+          <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24 h-fit">
             
             {/* AI Matchmaker card */}
-            <div className="bg-gradient-to-br from-indigo-950/20 to-dark-900 border border-indigo-500/20 p-6 rounded-3xl space-y-4 shadow-md relative overflow-hidden">
-              <div className="absolute -top-10 -left-10 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl pointer-events-none"></div>
-              
-              <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1.5">
-                <span className="text-sm">✨</span> AI Matchmaker
+            <div className="premium-card p-6 space-y-4 shadow-md relative overflow-hidden">
+              <h3 className="text-xs font-black text-glow-violet uppercase tracking-widest flex items-center gap-1.5">
+                <span>✨</span> AI Matchmaker
               </h3>
 
               <form onSubmit={handleAiMatchSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label htmlFor="aiGoal" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Your Mentorship Goals</label>
+                  <label htmlFor="aiGoal" className="text-[9px] font-black text-slate-muted uppercase tracking-wider block">Your Mentorship Goals</label>
                   <textarea
                     id="aiGoal"
                     required
@@ -279,18 +296,17 @@ export default function Browse() {
                     value={aiGoal}
                     onChange={(e) => setAiGoal(e.target.value)}
                     placeholder="e.g. I need guidance on entry-level ML engineer interview prep or Quantum RNG research papers."
-                    className="w-full bg-slate-950 border border-slate-800/80 text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500 transition-all resize-none"
+                    className="w-full bg-[#050505] border border-white/8 text-cyber-white rounded-xl p-3 text-xs outline-none focus:border-glow-violet transition-all resize-none font-sans"
                   ></textarea>
                 </div>
 
-                {/* AI Service Selector Toggle */}
                 <div className="space-y-1.5">
-                  <label htmlFor="aiProvider" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">AI Match Provider</label>
+                  <label htmlFor="aiProvider" className="text-[9px] font-black text-slate-muted uppercase tracking-wider block">AI Match Provider</label>
                   <select
                     id="aiProvider"
                     value={aiProvider}
                     onChange={(e) => setAiProvider(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800/80 text-slate-300 rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500 transition-all cursor-pointer"
+                    className="w-full bg-[#050505] border border-white/8 text-silver rounded-xl p-3 text-xs font-bold outline-none focus:border-glow-violet transition-all cursor-pointer"
                   >
                     <option value="anthropic">🤖 Anthropic Claude 3.5</option>
                     <option value="openai">🧠 OpenAI GPT-4o Model</option>
@@ -300,14 +316,11 @@ export default function Browse() {
                 <button
                   type="submit"
                   disabled={aiLoading}
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white font-black text-xs shadow-md shadow-primary-600/10 cursor-pointer transition-all duration-350 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-1.5"
+                  className="w-full py-3 px-4 rounded-xl bg-cyber-white text-black font-extrabold text-xs shadow-md cursor-pointer transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-1.5 hover:scale-102"
                 >
                   {aiLoading ? (
                     <>
-                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
+                      <div className="animate-spin h-3.5 w-3.5 border-2 border-black border-t-transparent rounded-full"></div>
                       Matching...
                     </>
                   ) : (
@@ -324,48 +337,74 @@ export default function Browse() {
               {isAiMode && (
                 <button
                   onClick={handleExitAiMode}
-                  className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-350 font-bold text-xs cursor-pointer transition-all text-center"
+                  className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-muted font-bold text-xs cursor-pointer transition-all text-center"
                 >
                   Exit AI Matchmaker
                 </button>
               )}
             </div>
 
-            {/* Standard Keywords card */}
-            <div className="bg-dark-900/50 border border-slate-900 p-6 rounded-3xl space-y-4">
-              <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest">Standard Search</h3>
-              
+            {/* AI Recommendation Journey */}
+            {isAiMode && (
+              <div className="premium-card p-6 space-y-4 animate-stagger-fade">
+                <h3 className="text-xs font-black text-glow-violet uppercase tracking-widest">AI Matching Journey</h3>
+                <div className="relative pl-6 border-l border-glow-violet/20 space-y-4 font-sans text-xs">
+                  <div className="relative">
+                    <div className="absolute -left-[30px] top-0.5 w-4 h-4 rounded-full bg-glow-violet/20 border border-glow-violet flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 rounded-full bg-glow-violet animate-pulse"></div>
+                    </div>
+                    <div className="font-extrabold text-cyber-white">Parsed Target Domain</div>
+                    <p className="text-slate-muted mt-0.5">{aiGoal.length > 35 ? `${aiGoal.substring(0, 35)}...` : aiGoal}</p>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute -left-[30px] top-0.5 w-4 h-4 rounded-full bg-glow-violet/20 border border-glow-violet flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 rounded-full bg-glow-violet animate-pulse"></div>
+                    </div>
+                    <div className="font-extrabold text-cyber-white">Filtered Locality</div>
+                    <p className="text-slate-muted mt-0.5">Matched in {student?.city}</p>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute -left-[30px] top-0.5 w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-500 flex items-center justify-center animate-pulse">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                    </div>
+                    <div className="font-extrabold text-emerald-400">Matches Ranked</div>
+                    <p className="text-slate-muted mt-0.5">Found {aiMatches.length} matching mentors</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Filters */}
+            <div className="premium-card p-6 space-y-4 shadow-md">
+              <h3 className="text-xs font-black text-slate-muted uppercase tracking-widest">Keyword Search</h3>
               <form onSubmit={handleSearchSubmit} className="relative flex items-center">
                 <input
                   type="text"
-                  placeholder="e.g. Harsha, Bio, Tech"
+                  placeholder="Search name, bio..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800/80 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-550 outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
+                  className="w-full bg-[#050505] border border-white/8 rounded-xl pl-9 pr-4 py-2.5 text-xs text-cyber-white placeholder-slate-dark outline-none focus:border-glow-blue transition-all"
                 />
-                <svg className="w-4 h-4 text-slate-500 absolute left-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 text-slate-dark absolute left-3 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </form>
 
               <button
                 onClick={handleLocalToggle}
-                className={`w-full py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 border transition-all duration-300 cursor-pointer ${
+                className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 border transition-all duration-300 cursor-pointer ${
                   localOnly
-                    ? 'bg-primary-500/10 border-primary-500/40 text-primary-400'
-                    : 'bg-slate-950 border-slate-800 text-slate-350 hover:border-slate-700'
+                    ? 'bg-glow-blue/10 border-glow-blue/30 text-glow-blue'
+                    : 'bg-[#050505] border-white/8 text-slate-muted hover:border-white/15'
                 }`}
               >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                </svg>
-                Local Match Only ({student?.city})
+                📍 Local Match ({student?.city})
               </button>
             </div>
 
-            {/* Popular Domains checklist */}
-            <div className="bg-dark-900/50 border border-slate-900 p-6 rounded-3xl space-y-3">
-              <h3 className="text-xs font-black text-slate-450 uppercase tracking-widest">Filter by Domain</h3>
+            {/* Popular Domains */}
+            <div className="premium-card p-6 space-y-3 shadow-md">
+              <h3 className="text-xs font-black text-slate-muted uppercase tracking-widest">Filter by Domain</h3>
               <div className="flex flex-col gap-1.5">
                 {POPULAR_DOMAINS.map((domain) => {
                   const isSelected = selectedDomain === domain;
@@ -375,13 +414,13 @@ export default function Browse() {
                       onClick={() => handleDomainSelect(domain)}
                       className={`text-left py-2 px-3 rounded-lg font-bold text-xs transition-all border cursor-pointer flex items-center justify-between ${
                         isSelected
-                          ? 'bg-primary-500/10 border-primary-500/30 text-primary-400'
-                          : 'bg-transparent border-transparent hover:bg-slate-900/60 text-slate-300'
+                          ? 'bg-glow-violet/10 border-glow-violet/20 text-glow-blue'
+                          : 'bg-transparent border-transparent hover:bg-white/5 text-slate-muted'
                       }`}
                     >
                       <span>{domain}</span>
                       {isSelected && (
-                        <svg className="w-3.5 h-3.5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3.5 h-3.5 text-glow-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                         </svg>
                       )}
@@ -393,20 +432,20 @@ export default function Browse() {
 
           </div>
 
-          {/* Right Column: Active Filters, Mentors Grid */}
+          {/* Right Column: Grid and Views */}
           <div className="lg:col-span-3 space-y-6">
             
-            {/* Tabs */}
-            <div className="flex border-b border-slate-900 gap-6">
+            {/* Tab selection */}
+            <div className="flex border-b border-white/8 gap-6">
               <button
                 onClick={() => setActiveTab('browse')}
                 className={`pb-3 font-bold text-sm transition-all relative cursor-pointer ${
-                  activeTab === 'browse' ? 'text-primary-400' : 'text-slate-450 hover:text-white'
+                  activeTab === 'browse' ? 'text-cyber-white' : 'text-slate-muted hover:text-cyber-white'
                 }`}
               >
                 Browse Mentors
                 {activeTab === 'browse' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-500 rounded-full"></div>
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyber-white rounded-full"></div>
                 )}
               </button>
               <button
@@ -415,47 +454,42 @@ export default function Browse() {
                   fetchSentRequestsList();
                 }}
                 className={`pb-3 font-bold text-sm transition-all relative cursor-pointer flex items-center gap-2 ${
-                  activeTab === 'requests' ? 'text-primary-400' : 'text-slate-450 hover:text-white'
+                  activeTab === 'requests' ? 'text-cyber-white' : 'text-slate-muted hover:text-cyber-white'
                 }`}
               >
-                My Requests Tracker
+                Requests Tracker
                 {sentRequests.length > 0 && (
-                  <span className="py-0.5 px-2 text-[10px] bg-primary-500/10 text-primary-400 border border-primary-500/20 rounded-full font-black">
+                  <span className="py-0.5 px-2 text-[9px] bg-white/10 text-cyber-white border border-white/10 rounded-full font-black">
                     {sentRequests.length}
                   </span>
                 )}
                 {activeTab === 'requests' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-500 rounded-full"></div>
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyber-white rounded-full"></div>
                 )}
               </button>
             </div>
 
             {activeTab === 'requests' ? (
-              // Connections/Requests Tracker View
+              // Sent Requests View
               requestsLoading ? (
                 <div className="flex justify-center items-center py-16">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-500"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-white/10 border-t-white"></div>
                 </div>
               ) : sentRequests.length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-12 bg-dark-900/25 border border-slate-900/50 rounded-3xl text-center max-w-md mx-auto mt-6 backdrop-blur-md">
-                  <div className="inline-flex p-4 rounded-2xl bg-slate-900/50 border border-slate-850 mb-4 text-slate-500">
-                    <svg className="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-2">No Requests Sent</h3>
-                  <p className="text-slate-400 text-xs mb-6 max-w-xs leading-relaxed">
-                    You haven't sent any connection requests yet. Find a mentor you like and click "Request Connection".
+                <div className="flex flex-col items-center justify-center p-12 bg-dark-card border border-white/8 rounded-3xl text-center max-w-md mx-auto mt-6">
+                  <h3 className="text-base font-bold text-cyber-white mb-1">No Requests Sent</h3>
+                  <p className="text-slate-muted text-xs mb-6 max-w-xs leading-relaxed">
+                    Submit a connection request to any mentor inside their profile view to start networking.
                   </p>
                   <button
                     onClick={() => setActiveTab('browse')}
-                    className="py-2.5 px-5 rounded-xl bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white font-bold text-xs cursor-pointer transition-all duration-300 shadow-md"
+                    className="py-2.5 px-5 rounded-xl bg-cyber-white text-black font-extrabold text-xs cursor-pointer hover:scale-102"
                   >
                     Browse Mentors
                   </button>
                 </div>
               ) : (
-                <div className="space-y-4 font-sans">
+                <div className="space-y-4">
                   {sentRequests.map((req) => {
                     const isExpanded = !!expandedRequests[req.id];
                     let statusColor = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
@@ -465,20 +499,23 @@ export default function Browse() {
                     return (
                       <div 
                         key={req.id}
-                        className="bg-dark-900/40 border border-slate-900 rounded-3xl p-6 shadow-md hover:border-slate-800/80 transition-all duration-300"
+                        className="premium-card p-6 shadow-md"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary-600 to-indigo-500 flex items-center justify-center text-white font-extrabold text-lg shadow-md shrink-0">
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-glow-violet to-glow-blue flex items-center justify-center text-cyber-white font-extrabold text-lg shadow-md shrink-0">
                               {req.mentor?.name ? req.mentor.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2) : 'M'}
                             </div>
                             <div>
-                              <h4 className="text-white font-bold text-base leading-snug">{req.mentor?.name}</h4>
-                              <p className="text-slate-400 text-xs flex items-center gap-1">
-                                <svg className="w-3.5 h-3.5 text-slate-550" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                </svg>
-                                {req.mentor?.city}
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-cyber-white font-bold text-base leading-snug">{req.mentor?.name}</h4>
+                                <span className="text-[10px] text-slate-dark">•</span>
+                                <span className="text-[10px] text-slate-muted font-bold">
+                                  {req.status === 'accepted' ? 'Accepted' : req.status === 'declined' ? 'Declined' : 'Sent'} {formatTimeAgo(req.updated_at || req.created_at)}
+                                </span>
+                              </div>
+                              <p className="text-slate-muted text-xs flex items-center gap-1 mt-0.5">
+                                📍 {req.mentor?.city}
                               </p>
                             </div>
                           </div>
@@ -490,11 +527,11 @@ export default function Browse() {
                             
                             <button
                               onClick={() => toggleRequestExpand(req.id)}
-                              className="py-1.5 px-3 rounded-lg bg-slate-950 border border-slate-900 text-slate-400 hover:text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                              className="py-1.5 px-3 rounded-lg bg-[#050505] border border-white/8 text-slate-muted hover:text-cyber-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
                             >
                               {isExpanded ? 'Hide Details' : 'View Details'}
                               <svg className={`w-3.5 h-3.5 transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
                               </svg>
                             </button>
                           </div>
@@ -502,31 +539,26 @@ export default function Browse() {
 
                         {/* Collapsible Details */}
                         {isExpanded && (
-                          <div className="mt-6 pt-5 border-t border-slate-900/85 space-y-4 text-sm animate-fadeIn">
+                          <div className="mt-6 pt-5 border-t border-white/8 space-y-4 text-xs animate-stagger-fade">
                             <div className="space-y-1">
-                              <span className="text-[10px] font-black text-slate-450 uppercase tracking-widest block">1. What specifically do you want to learn or achieve?</span>
-                              <p className="text-slate-200 bg-slate-950/40 p-3.5 rounded-2xl border border-slate-950/60 leading-relaxed font-medium">
+                              <span className="text-[9px] font-black text-slate-muted uppercase tracking-widest block">1. What specifically do you want to learn or achieve?</span>
+                              <p className="text-silver bg-[#050505] p-3.5 rounded-2xl border border-white/5 leading-relaxed font-medium">
                                 {req.answer_1}
                               </p>
                             </div>
 
                             <div className="space-y-1">
-                              <span className="text-[10px] font-black text-slate-450 uppercase tracking-widest block">2. What have you already tried or explored on your own?</span>
-                              <p className="text-slate-200 bg-slate-950/40 p-3.5 rounded-2xl border border-slate-950/60 leading-relaxed font-medium">
+                              <span className="text-[9px] font-black text-slate-muted uppercase tracking-widest block">2. What have you already tried or explored on your own?</span>
+                              <p className="text-silver bg-[#050505] p-3.5 rounded-2xl border border-white/5 leading-relaxed font-medium">
                                 {req.answer_2}
                               </p>
                             </div>
 
                             <div className="space-y-1">
-                              <span className="text-[10px] font-black text-slate-450 uppercase tracking-widest block">3. What is your concrete ask for the first session?</span>
-                              <p className="text-slate-200 bg-slate-950/40 p-3.5 rounded-2xl border border-slate-950/60 leading-relaxed font-medium">
+                              <span className="text-[9px] font-black text-slate-muted uppercase tracking-widest block">3. What is your concrete ask for the first session?</span>
+                              <p className="text-silver bg-[#050505] p-3.5 rounded-2xl border border-white/5 leading-relaxed font-medium">
                                 {req.answer_3}
                               </p>
-                            </div>
-
-                            <div className="text-[10px] text-slate-500 flex justify-between pt-1 font-mono">
-                              <span>Sent on {new Date(req.created_at).toLocaleDateString()}</span>
-                              <span>Request ID: #{req.id}</span>
                             </div>
                           </div>
                         )}
@@ -537,112 +569,185 @@ export default function Browse() {
               )
             ) : (
               <>
-                {/* Filter tags header */}
-                <div className="flex flex-wrap items-center justify-between gap-4 py-2">
-                  <div className="text-xs text-slate-400">
+                {/* Active filters summary */}
+                <div className="flex flex-wrap items-center justify-between gap-4 py-1">
+                  <div className="text-xs text-slate-muted">
                     {isAiMode ? (
-                      <span className="flex items-center gap-1.5 font-bold text-indigo-400">
-                        <span className="animate-pulse">⚡</span> AI Matchmaker active: showing {aiMatches.length} sorted recommendations ({aiProvider === 'anthropic' ? 'Claude' : 'GPT'})
+                      <span className="flex items-center gap-1.5 font-bold text-glow-violet">
+                        <span className="animate-pulse">⚡</span> AI recommendations computed based on goals.
                       </span>
                     ) : (
-                      <span>Showing <strong className="text-white">{mentors.length}</strong> available mentors</span>
+                      <span>Showing <strong className="text-cyber-white">{mentors.length}</strong> available mentors in Discovery Grid</span>
                     )}
                   </div>
 
-                  {/* Reset filter button */}
                   {(searchQuery || selectedDomain || localOnly || isAiMode) && (
                     <button
                       onClick={handleClearFilters}
-                      className="py-1 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5"
+                      className="py-1 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-muted text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                      Clear All Filters
+                      Clear Filters
                     </button>
                   )}
                 </div>
 
-                {/* Error banner */}
                 {error && (
                   <div className="p-4 bg-red-500/10 border border-red-500/25 rounded-2xl text-red-400 text-sm animate-pulse">
                     {error}
                   </div>
                 )}
 
-                {/* Grid display */}
-                {loading || aiLoading ? (
-                  // Loading Skeleton
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[1, 2, 3, 4].map((num) => (
-                      <div key={num} className="bg-dark-900/30 border border-slate-900 p-6 rounded-3xl flex flex-col justify-between h-80 animate-pulse">
-                        <div>
-                          <div className="flex gap-4 mb-4">
-                            <div className="w-14 h-14 bg-slate-800 rounded-2xl shrink-0"></div>
+                {loading ? (
+                  // Skeleton Loading (arranged in 3-column discovery format)
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-pulse">
+                    {[1, 2, 3].map((num) => (
+                      <div key={num} className="bg-dark-card border border-white/8 p-6 rounded-3xl flex flex-col justify-between h-80">
+                        <div className="space-y-4">
+                          <div className="flex gap-4">
+                            <div className="w-14 h-14 bg-[#050505] rounded-2xl shrink-0"></div>
                             <div className="flex-1 space-y-2 py-1">
-                              <div className="h-4 bg-slate-800 rounded w-3/4"></div>
-                              <div className="h-3 bg-slate-800 rounded w-1/2"></div>
+                              <div className="h-4 bg-[#050505] rounded w-3/4"></div>
+                              <div className="h-3 bg-[#050505] rounded w-1/2"></div>
                             </div>
                           </div>
-                          <div className="h-3 bg-slate-800 rounded w-1/3 mb-4"></div>
-                          <div className="space-y-2 mb-6">
-                            <div className="h-3 bg-slate-800 rounded w-full"></div>
-                            <div className="h-3 bg-slate-800 rounded w-5/6"></div>
+                          <div className="h-3 bg-[#050505] rounded w-1/3"></div>
+                          <div className="space-y-2">
+                            <div className="h-3 bg-[#050505] rounded w-full"></div>
+                            <div className="h-3 bg-[#050505] rounded w-5/6"></div>
                           </div>
                         </div>
-                        <div className="h-10 bg-slate-800 rounded-xl w-full"></div>
+                        <div className="h-9 bg-[#050505] rounded-xl w-full"></div>
                       </div>
                     ))}
                   </div>
+                ) : aiLoading ? (
+                  // Live-generated loading steps
+                  <div className="premium-card p-8 shadow-lg relative overflow-hidden flex flex-col justify-center min-h-[350px] animate-stagger-fade">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-glow-violet/5 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <div className="relative z-10 space-y-8 max-w-md mx-auto w-full">
+                      <div className="flex flex-col items-center justify-center text-center space-y-3">
+                        <div className="relative flex items-center justify-center">
+                          <span className="absolute inline-flex h-12 w-12 rounded-full bg-glow-violet/20 animate-ping"></span>
+                          <div className="relative p-3 bg-glow-violet/10 border border-glow-violet/20 rounded-2xl text-glow-violet">
+                            <svg className="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                          </div>
+                        </div>
+                        <div>
+                          <h3 className="text-base font-extrabold text-cyber-white">Calibrating AI Matches</h3>
+                          <p className="text-slate-muted text-xs mt-1">Ranking availability and proximity overlap</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4 font-sans text-xs">
+                        <div className={`flex items-center gap-3 transition-all duration-300 ${matchLoadingStep >= 0 ? 'opacity-100' : 'opacity-30'}`}>
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                            matchLoadingStep > 0
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-glow-violet/10 text-glow-violet border border-glow-violet/30 animate-pulse'
+                          }`}>
+                            {matchLoadingStep > 0 ? '✓' : '1'}
+                          </div>
+                          <span className={`font-bold ${matchLoadingStep === 0 ? 'text-glow-violet' : 'text-slate-muted'}`}>
+                            {matchLoadingStep > 0 ? 'Domain compatibility analyzed' : 'Analyzing domain compatibility...'}
+                          </span>
+                        </div>
+
+                        <div className={`flex items-center gap-3 transition-all duration-300 ${matchLoadingStep >= 1 ? 'opacity-100' : 'opacity-30'}`}>
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                            matchLoadingStep > 1
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                              : matchLoadingStep === 1
+                                ? 'bg-glow-violet/10 text-glow-violet border border-glow-violet/30 animate-pulse'
+                                : 'bg-slate-900 text-slate-dark border border-slate-800'
+                          }`}>
+                            {matchLoadingStep > 1 ? '✓' : '2'}
+                          </div>
+                          <span className={`font-bold ${matchLoadingStep === 1 ? 'text-glow-violet' : 'text-slate-muted'}`}>
+                            {matchLoadingStep > 1 ? 'Locality relevance verified' : 'Verifying locality overlap...'}
+                          </span>
+                        </div>
+
+                        <div className={`flex items-center gap-3 transition-all duration-300 ${matchLoadingStep >= 2 ? 'opacity-100' : 'opacity-30'}`}>
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                            matchLoadingStep > 2
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                              : matchLoadingStep === 2
+                                ? 'bg-glow-violet/10 text-glow-violet border border-glow-violet/30 animate-pulse'
+                                : 'bg-slate-900 text-slate-dark border border-slate-800'
+                          }`}>
+                            {matchLoadingStep > 2 ? '✓' : '3'}
+                          </div>
+                          <span className={`font-bold ${matchLoadingStep === 2 ? 'text-glow-violet' : 'text-slate-muted'}`}>
+                            {matchLoadingStep > 2 ? 'Compatibility fit calibrated' : 'Ranking compatibility and fit...'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 ) : isAiMode && aiMatches.length === 0 ? (
-                  // Empty State
-                  <div className="flex flex-col items-center justify-center p-12 bg-dark-900/25 border border-slate-900/50 rounded-3xl text-center max-w-lg mx-auto mt-6 backdrop-blur-md">
-                    <h3 className="text-xl font-bold text-white mb-2">No AI Matches Found</h3>
-                    <p className="text-slate-400 text-xs mb-6 max-w-sm">
-                      The AI couldn't generate matches. Try rephrasing your mentorship goals or ensure the mentor database is not empty.
+                  <div className="flex flex-col items-center justify-center p-12 bg-dark-card border border-white/8 rounded-3xl text-center max-w-lg mx-auto mt-6">
+                    <h3 className="text-lg font-bold text-cyber-white mb-2">No AI Matches Found</h3>
+                    <p className="text-slate-muted text-xs mb-6 max-w-sm">
+                      Try adjusting the goals context or verify the local database state.
                     </p>
                     <button
                       onClick={handleExitAiMode}
-                      className="py-2 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer transition-all"
+                      className="py-2.5 px-5 rounded-xl bg-[#050505] border border-white/8 text-cyber-white font-bold text-xs cursor-pointer"
                     >
                       Exit AI Matchmaker
                     </button>
                   </div>
                 ) : isAiMode ? (
-                  // AI Matches View
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {aiMatches.map((match) => (
-                      <MentorCard
-                        key={match.mentor_id}
-                        mentor={match}
-                        studentCity={student?.city}
-                      />
-                    ))}
-                  </div>
-                ) : mentors.length === 0 ? (
-                  // Empty State
-                  <div className="flex flex-col items-center justify-center p-12 bg-dark-900/25 border border-slate-900/50 rounded-3xl text-center max-w-lg mx-auto mt-6 backdrop-blur-md">
-                    <div className="inline-flex p-4 rounded-2xl bg-slate-900/50 border border-slate-850 mb-4 text-slate-500">
-                      <svg className="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
+                  // AI matches split: Hero vs Grid
+                  <div className="space-y-6">
+                    <div className="space-y-2.5">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-glow-blue bg-glow-blue/10 py-1 px-3 border border-glow-blue/20 rounded-full">
+                        🏆 Top Recommendation
+                      </span>
+                      <div className="grid grid-cols-1">
+                        <MentorCard
+                          mentor={aiMatches[0]}
+                          studentCity={student?.city}
+                          isTopMatch={true}
+                        />
+                      </div>
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">No Mentors Match Your Filters</h3>
-                    <p className="text-slate-400 text-xs mb-6 max-w-sm leading-relaxed">
-                      Adjust your search terms or uncheck the locality/domain toggles to view matching profiles.
-                    </p>
-                    {(searchQuery || selectedDomain || localOnly) && (
-                      <button
-                        onClick={handleClearFilters}
-                        className="py-2.5 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs cursor-pointer transition-all duration-300"
-                      >
-                        Clear Filters
-                      </button>
+
+                    {aiMatches.length > 1 && (
+                      <div className="space-y-3 pt-4">
+                        <h4 className="text-[9px] font-black text-slate-dark uppercase tracking-widest">Other Compatible matches</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                          {aiMatches.slice(1).map((match) => (
+                            <MentorCard
+                              key={match.mentor_id}
+                              mentor={match}
+                              studentCity={student?.city}
+                            />
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
+                ) : mentors.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center p-12 bg-dark-card border border-white/8 rounded-3xl text-center max-w-lg mx-auto mt-6">
+                    <h3 className="text-base font-bold text-cyber-white mb-2">No Matches Found</h3>
+                    <p className="text-slate-muted text-xs mb-6 leading-relaxed max-w-xs">
+                      Clear filters or untoggle local configurations to reveal all mentor profiles.
+                    </p>
+                    <button
+                      onClick={handleClearFilters}
+                      className="py-2 px-5 rounded-xl bg-slate-900 border border-slate-800 text-cyber-white font-bold text-xs cursor-pointer"
+                    >
+                      Clear All Filters
+                    </button>
+                  </div>
                 ) : (
-                  // Standard Grid View of Mentors
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  // Standard Grid View (3 Columns Layout)
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {mentors.map((mentor) => (
                       <MentorCard
                         key={mentor.id}

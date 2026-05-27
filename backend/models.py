@@ -24,6 +24,8 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     role = Column(String, nullable=False, index=True)  # 'student' or 'mentor'
     city = Column(String, nullable=False, index=True)
+    avatar_url = Column(String, nullable=True)
+    avatar_gradient = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     # Relationships
@@ -91,6 +93,7 @@ class MentorProfile(Base):
     what_ill_discuss = Column(String, nullable=True)
     avg_rating = Column(Float, default=0.0, nullable=False)
     session_count = Column(Integer, default=0, nullable=False)
+    availability_state = Column(String, default="available", nullable=True)  # available, limited, busy, offline
 
     # Relationships
     user = relationship("User", back_populates="mentor_profile")

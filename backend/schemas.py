@@ -33,6 +33,8 @@ class UserRead(BaseModel):
     email: str
     role: Literal["student", "mentor"]
     city: str
+    avatar_url: Optional[str] = None
+    avatar_gradient: Optional[str] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -47,6 +49,7 @@ class MentorProfileBase(BaseModel):
     bio: Optional[str] = Field(None, description="Short bio about the mentor's experience")
     max_sessions_per_month: int = Field(default=4, ge=1, le=20)
     what_ill_discuss: Optional[str] = Field(None, description="What the mentor is open to discuss")
+    availability_state: Optional[str] = Field(default="available", description="available, limited, busy, offline")
 
 class MentorProfileCreate(MentorProfileBase):
     pass

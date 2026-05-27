@@ -1,14 +1,17 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Welcome from './pages/Welcome';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Browse from './pages/Browse';
 import MentorProfile from './pages/MentorProfile';
 import MentorDashboard from './pages/MentorDashboard';
 import DesignShowcase from './pages/DesignShowcase';
+import StudentDashboard from './pages/StudentDashboard';
+import ResultsShowcase from './pages/ResultsShowcase';
+import Conversation from './pages/Conversation';
 
-// Simple check to enforce route protection
-// Day 2 Client Session helper
+// Route guard to restrict access by authentication and roles
 const ProtectedRoute = ({ children, allowedRole }) => {
   const token = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');
@@ -19,7 +22,7 @@ const ProtectedRoute = ({ children, allowedRole }) => {
 
   const user = JSON.parse(userStr);
   if (allowedRole && user.role !== allowedRole) {
-    // If student tries to visit mentor dashboard or vice versa
+    // Redirect users to their respective dashboards if they try to access a route of another role
     return <Navigate to={user.role === 'mentor' ? '/mentor-dashboard' : '/browse'} replace />;
   }
 
@@ -30,7 +33,8 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Auth routes */}
+        {/* Public Landing & Auth routes */}
+        <Route path="/" element={<Welcome />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/design" element={<DesignShowcase />} />
@@ -54,7 +58,27 @@ function App() {
         />
         <Route 
           path="/student-dashboard" 
-          element={<Navigate to="/browse" replace />} 
+          element={
+            <ProtectedRoute allowedRole="student">
+              <StudentDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/results" 
+          element={
+            <ProtectedRoute allowedRole="student">
+              <ResultsShowcase />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/chat" 
+          element={
+            <ProtectedRoute allowedRole="student">
+              <Conversation />
+            </ProtectedRoute>
+          } 
         />
         
         {/* Protected Mentor routes */}
@@ -68,7 +92,7 @@ function App() {
         />
         
         {/* Catch-all fallback redirect */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

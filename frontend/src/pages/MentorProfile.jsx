@@ -67,23 +67,20 @@ export default function MentorProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-dark-950 text-white flex flex-col justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
-        <p className="mt-4 text-slate-400 font-semibold">Loading profile...</p>
+      <div className="min-h-screen bg-dark-canvas text-silver flex flex-col justify-center items-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-white/10 border-t-white"></div>
+        <p className="mt-4 text-slate-muted text-xs font-semibold">Loading profile...</p>
       </div>
     );
   }
 
   if (error || !mentor) {
     return (
-      <div className="min-h-screen bg-dark-950 text-white flex flex-col justify-center items-center p-6 text-center">
-        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-3xl mb-4 text-red-400">
-          <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
+      <div className="min-h-screen bg-dark-canvas text-silver flex flex-col justify-center items-center p-6 text-center">
+        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-3xl mb-4 text-red-400 max-w-sm">
           <span className="font-bold">{error || 'Mentor not found'}</span>
         </div>
-        <Link to="/browse" className="py-2.5 px-6 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 font-bold hover:bg-slate-800 transition-all duration-300">
+        <Link to="/browse" className="py-2.5 px-6 rounded-xl bg-slate-900 border border-slate-800 text-silver font-bold hover:bg-slate-800 transition-all duration-300">
           Back to Browse
         </Link>
       </div>
@@ -104,32 +101,20 @@ export default function MentorProfile() {
       .slice(0, 2);
   };
 
-  // Render gold rating stars
+  // Render rating stars
   const renderStars = (rating) => {
     const stars = [];
-    const roundedRating = Math.round(rating * 2) / 2;
+    const roundedRating = Math.round((rating || 0) * 2) / 2;
     for (let i = 1; i <= 5; i++) {
       if (i <= roundedRating) {
         stars.push(
-          <svg key={i} className="w-5 h-5 text-amber-400 fill-amber-400" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+          <svg key={i} className="w-4 h-4 text-amber-400 fill-amber-400" viewBox="0 0 20 20">
             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-          </svg>
-        );
-      } else if (i - 0.5 === roundedRating) {
-        stars.push(
-          <svg key={i} className="w-5 h-5 text-amber-400" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="halfStarGradProfile">
-                <stop offset="50%" stopColor="#fbbf24" />
-                <stop offset="50%" stopColor="#475569" />
-              </linearGradient>
-            </defs>
-            <path fill="url(#halfStarGradProfile)" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
           </svg>
         );
       } else {
         stars.push(
-          <svg key={i} className="w-5 h-5 text-slate-600 fill-slate-600" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+          <svg key={i} className="w-4 h-4 text-slate-700 fill-slate-700" viewBox="0 0 20 20">
             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
           </svg>
         );
@@ -139,63 +124,60 @@ export default function MentorProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-950 text-white bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary-950/15 via-dark-950 to-dark-950 pb-20">
+    <div className="min-h-screen bg-dark-canvas text-silver pb-20 relative overflow-hidden bg-grid-dots">
+      <div className="radial-spotlight"></div>
       
       {/* Navigation bar */}
-      <div className="max-w-6xl mx-auto px-6 pt-6">
-        <Link to="/browse" className="inline-flex items-center gap-2 text-slate-400 hover:text-primary-400 transition-colors duration-300 font-semibold group text-sm">
-          <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Browse
+      <div className="max-w-6xl mx-auto px-6 pt-6 relative z-10">
+        <Link to="/browse" className="inline-flex items-center gap-2 text-slate-muted hover:text-cyber-white transition-colors duration-300 font-semibold group text-xs">
+          ← Back to Discovery Grid
         </Link>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-6xl mx-auto px-6 mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
         
-        {/* Profile details - Left column (2 columns wide) */}
+        {/* Profile details - Left column */}
         <div className="lg:col-span-2 space-y-8">
+          
           {/* Main Info Card */}
-          <div className="bg-dark-900/40 border border-slate-900 backdrop-blur-xl p-8 rounded-3xl shadow-lg relative overflow-hidden">
+          <div className="premium-card p-8 shadow-lg relative overflow-hidden">
             {isLocal && (
-              <div className="absolute top-6 right-6 flex items-center gap-1.5 py-1 px-3.5 rounded-full bg-primary-500/10 border border-primary-500/30 text-primary-400 text-xs font-black tracking-wider uppercase animate-pulse">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                </svg>
-                Local Match
+              <div className="absolute top-6 right-6 flex items-center gap-1.5 py-1 px-3.5 rounded-full bg-glow-blue/10 border border-glow-blue/20 text-glow-blue text-[9px] font-black uppercase tracking-wider animate-pulse">
+                📍 Local Match
               </div>
             )}
             
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-              <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-primary-600 to-indigo-500 flex items-center justify-center text-white font-extrabold text-3xl shadow-xl shadow-indigo-950/20 shrink-0">
-                {getInitials(user?.name)}
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-glow-violet to-glow-blue flex items-center justify-center text-cyber-white font-extrabold text-2xl shadow-xl shrink-0">
+                {user?.avatar_url ? (
+                  <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover rounded-2xl" />
+                ) : (
+                  getInitials(user?.name)
+                )}
               </div>
               
-              <div className="text-center md:text-left space-y-3">
-                <h1 className="text-3xl font-extrabold text-white tracking-tight">{user?.name}</h1>
+              <div className="text-center md:text-left space-y-2">
+                <h1 className="text-2xl font-black text-cyber-white tracking-tight">{user?.name}</h1>
                 
-                <div className="flex flex-wrap justify-center md:justify-start items-center gap-3 text-slate-400 text-sm">
+                <div className="flex flex-wrap justify-center md:justify-start items-center gap-3 text-slate-muted text-xs">
                   <span className="flex items-center gap-1">
-                    <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    </svg>
-                    {user?.city}
+                    📍 {user?.city}
                   </span>
-                  <span className="text-slate-700">•</span>
-                  <span className="text-slate-300 font-bold bg-slate-800/40 py-1 px-3 border border-slate-700/30 rounded-lg">
+                  <span className="text-slate-dark">•</span>
+                  <span className="text-cyber-white font-bold bg-white/5 py-0.5 px-2 border border-white/5 rounded">
                     Mentor Account
                   </span>
                 </div>
 
                 {/* Rating */}
-                <div className="flex items-center justify-center md:justify-start gap-2.5 pt-2">
+                <div className="flex items-center justify-center md:justify-start gap-2.5 pt-1.5">
                   <div className="flex items-center gap-1">
                     {renderStars(avg_rating)}
                   </div>
-                  <span className="text-white text-base font-extrabold">{avg_rating?.toFixed(1) || '0.0'}</span>
-                  <span className="text-slate-600">|</span>
-                  <span className="text-slate-400 text-sm">
-                    <strong className="text-slate-200">{session_count || 0}</strong> completed sessions
+                  <span className="text-cyber-white text-sm font-black">{avg_rating?.toFixed(1) || '0.0'}</span>
+                  <span className="text-white/10">|</span>
+                  <span className="text-slate-muted text-xs">
+                    <strong className="text-cyber-white">{session_count || 0}</strong> conducted sessions
                   </span>
                 </div>
               </div>
@@ -203,93 +185,86 @@ export default function MentorProfile() {
           </div>
 
           {/* About & Bio Card */}
-          <div className="bg-dark-900/40 border border-slate-900 backdrop-blur-xl p-8 rounded-3xl space-y-6">
+          <div className="premium-card p-8 space-y-6">
             <div>
-              <h2 className="text-xl font-bold text-white mb-3">About Me</h2>
-              <p className="text-slate-300 text-base leading-relaxed whitespace-pre-line">
+              <h2 className="text-base font-black text-cyber-white uppercase tracking-wider mb-3">About Me</h2>
+              <p className="text-slate-muted text-xs md:text-sm leading-relaxed whitespace-pre-line font-medium">
                 {bio || "This mentor hasn't provided a bio yet."}
               </p>
             </div>
 
             <div>
-              <h2 className="text-lg font-bold text-white mb-3">Expertise & Domains</h2>
+              <h2 className="text-sm font-black text-cyber-white uppercase tracking-wider mb-3">Expertise & Domains</h2>
               <div className="flex flex-wrap gap-2">
                 {domains && domains.length > 0 ? (
                   domains.map((domain, index) => (
                     <span
                       key={index}
-                      className="py-1.5 px-3 rounded-xl bg-slate-800/50 border border-slate-700/60 text-slate-200 text-xs font-semibold"
+                      className="py-1 px-3 rounded-full bg-[#1E1E24] text-cyber-white text-[11px] font-bold"
                     >
                       {domain}
                     </span>
                   ))
                 ) : (
-                  <span className="text-sm text-slate-500 italic">No specific domains listed</span>
+                  <span className="text-xs text-slate-dark italic">No specific domains listed</span>
                 )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Action Panel - Right column (1 column wide) */}
+        {/* Action Panel - Right column */}
         <div className="space-y-8">
-          <div className="bg-gradient-to-br from-dark-900/50 to-slate-900/30 border border-slate-900 backdrop-blur-xl p-6 rounded-3xl shadow-xl flex flex-col justify-between space-y-6">
+          <div className="premium-card p-6 flex flex-col justify-between space-y-6 shadow-xl">
             
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold text-white">Availability</h3>
-              <div className="flex items-center gap-3 py-2 px-3 rounded-xl bg-slate-950/60 border border-slate-900 text-sm">
-                <svg className="w-5 h-5 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+            <div className="space-y-3">
+              <h3 className="text-xs font-black text-cyber-white uppercase tracking-wider">Availability</h3>
+              <div className="flex items-center gap-3 py-2 px-3 rounded-xl bg-[#050505] border border-white/5 text-xs">
                 <div>
-                  <div className="text-slate-400 text-xs">Monthly Session Limit</div>
-                  <div className="text-slate-200 font-bold">{max_sessions_per_month} sessions max</div>
+                  <div className="text-slate-muted text-[10px]">Monthly Connection Threshold</div>
+                  <div className="text-cyber-white font-bold mt-0.5">{max_sessions_per_month} slots maximum</div>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <h3 className="text-lg font-bold text-white">Discussion Topics</h3>
-              <p className="text-slate-300 text-sm leading-relaxed bg-slate-950/30 p-4 rounded-2xl border border-slate-900/80">
-                {what_ill_discuss || "Topics have not been specified. Reach out to coordinate an agenda!"}
+            <div className="space-y-2">
+              <h3 className="text-xs font-black text-cyber-white uppercase tracking-wider">Discussable Coordinates</h3>
+              <p className="text-slate-muted text-xs leading-relaxed bg-[#050505]/40 p-4 rounded-xl border border-white/5">
+                {what_ill_discuss || "Topics have not been specified. Coordinate an agenda upon connection acceptance."}
               </p>
-            </div>            {/* Connect Call-to-action */}
+            </div>
+
+            {/* Connect Call-to-action */}
             {currentUser?.role === 'student' ? (
-              <div className="space-y-3">
+              <div className="space-y-3 pt-2">
                 {existingRequest?.status === 'pending' ? (
-                  <div className="w-full py-4 px-6 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-black text-base text-center flex items-center justify-center gap-2.5 shadow-sm">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
-                    Pending Approval
+                  <div className="w-full py-3 px-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 font-extrabold text-xs text-center flex items-center justify-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    Pending Mentor Approval
                   </div>
                 ) : existingRequest?.status === 'accepted' ? (
-                  <div className="w-full py-4 px-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black text-base text-center flex items-center justify-center gap-2.5 shadow-sm">
-                    <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Connected
+                  <div className="w-full py-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-extrabold text-xs text-center flex items-center justify-center gap-2">
+                    ✓ Connection Active
                   </div>
                 ) : (
                   <>
                     <button
                       onClick={() => setShowConnectModal(true)}
-                      className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-500 hover:to-indigo-500 text-white font-black text-base shadow-lg shadow-primary-600/15 hover:shadow-primary-500/25 transition-all duration-300 flex items-center justify-center gap-2.5 cursor-pointer"
+                      className="w-full py-3 px-4 rounded-xl bg-cyber-white text-black font-extrabold text-xs uppercase tracking-wider hover:scale-102 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-md"
                     >
                       Request Connection
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
                     </button>
                     {existingRequest?.status === 'declined' && (
-                      <p className="text-xs text-slate-400 text-center leading-normal">
-                        Your previous request was declined. You can submit a new request with updated details.
+                      <p className="text-[10px] text-slate-muted text-center leading-normal">
+                        Your previous invitation was declined. You can submit an updated request targets checklist.
                       </p>
                     )}
                   </>
                 )}
               </div>
             ) : (
-              <div className="w-full py-4 px-6 rounded-2xl bg-slate-900 border border-slate-800 text-slate-500 font-bold text-center text-sm">
-                Logged in as Mentor
+              <div className="w-full py-3 px-4 rounded-xl bg-[#050505] border border-white/8 text-slate-dark font-bold text-center text-xs">
+                Locked: Registered as Mentor
               </div>
             )}
           </div>

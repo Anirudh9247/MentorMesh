@@ -1,0 +1,86 @@
+[
+  {
+    "name": "Ramu Prasad",
+    "email": "ramu@student.com",
+    "city": "Mumbai",
+    "interests": ["Cloud Computing", "DevOps"],
+    "goal_level": "Beginner"
+  },
+  {
+    "name": "Ananya Reddy",
+    "email": "ananya@student.com",
+    "city": "Hyderabad",
+    "interests": ["AI Research", "Deep Learning", "Python"],
+    "goal_level": "Advanced"
+  },
+  {
+    "name": "Vikram Sen",
+    "email": "vikram@student.com",
+    "city": "Bangalore",
+    "interests": ["Frontend", "React", "UI/UX"],
+    "goal_level": "Intermediate"
+  },
+  {
+    "name": "Aditya Sharma",
+    "email": "aditya@student.com",
+    "city": "Delhi",
+    "interests": ["Mobile Development", "Flutter"],
+    "goal_level": "Beginner"
+  },
+  {
+    "name": "Divya Krishnan",
+    "email": "divya_student@student.com",
+    "city": "Chennai",
+    "interests": ["Backend", "Go", "Node.js"],
+    "goal_level": "Intermediate"
+  },
+  {
+    "name": "Kiran Rao",
+    "email": "kiran@student.com",
+    "city": "Bangalore",
+    "interests": ["DevOps", "Kubernetes", "AWS"],
+    "goal_level": "Career-Transition"
+  },
+  {
+    "name": "Pooja Hegde",
+    "email": "pooja_student@student.com",
+    "city": "Hyderabad",
+    "interests": ["UI/UX", "Figma", "UI/UX Design"],
+    "goal_level": "Beginner"
+  },
+  {
+    "name": "Rahul Verma",
+    "email": "rahul_student@student.com",
+    "city": "Mumbai",
+    "interests": ["DSA/Competitive Coding", "Java"],
+    "goal_level": "Intermediate"
+  },
+  {
+    "name": "Siddharth Nair",
+    "email": "sid@student.com",
+    "city": "Delhi",
+    "interests": ["Blockchain", "Solidity"],
+    "goal_level": "Research-Focused"
+  },
+  {
+    "name": "Meera Joshi",
+    "email": "meera_student@student.com",
+    "city": "Bangalore",
+    "interests": ["Data Science", "Python", "SQL"],
+    "goal_level": "Beginner"
+  },
+  {
+    "name": "Harini Murugan",
+    "email": "harini@student.com",
+    "city": "Chennai",
+    "interests": ["Cybersecurity", "Linux"],
+    "goal_level": "Startup-Focused"
+  },
+  {
+    "name": "Sanjay Kapoor",
+    "email": "sanjay_student@student.com",
+    "city": "Hyderabad",
+    "interests": ["Backend", "Django", "Python"],
+    "goal_level": "Beginner"
+  }
+]

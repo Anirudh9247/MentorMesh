@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-export default function MentorCard({ mentor, studentCity }) {
+export default function MentorCard({ mentor, studentCity, isTopMatch = false }) {
   // Check if this card represents an AI match result
   const isAiMatched = mentor?.score !== undefined;
   const mentorProfile = isAiMatched ? mentor.mentor_data : mentor;
@@ -14,6 +14,45 @@ export default function MentorCard({ mentor, studentCity }) {
   // Check if this is a local match (same city)
   const isLocal = studentCity && user?.city && studentCity.toLowerCase().trim() === user.city.toLowerCase().trim();
 
+  // 1. Score Counting Animation
+  const [displayScore, setDisplayScore] = useState(0);
+  useEffect(() => {
+    if (isAiMatched && matchScore > 0) {
+      let start = 0;
+      const end = matchScore;
+      const duration = 800; // 0.8s animation
+      const stepTime = Math.max(Math.floor(duration / end), 12);
+      
+      const timer = setInterval(() => {
+        start += 1;
+        if (start >= end) {
+          setDisplayScore(end);
+          clearInterval(timer);
+        } else {
+          setDisplayScore(start);
+        }
+      }, stepTime);
+      return () => clearInterval(timer);
+    }
+  }, [matchScore, isAiMatched]);
+
+  // 2. Typing Match Reason Animation
+  const [typedReason, setTypedReason] = useState('');
+  useEffect(() => {
+    if (isAiMatched && matchReason) {
+      setTypedReason('');
+      let index = 0;
+      const timer = setInterval(() => {
+        setTypedReason((prev) => prev + matchReason.charAt(index));
+        index++;
+        if (index >= matchReason.length) {
+          clearInterval(timer);
+        }
+      }, 10); // typing speed (10ms per character)
+      return () => clearInterval(timer);
+    }
+  }, [matchReason, isAiMatched]);
+
   // Helper to generate initials for avatar
   const getInitials = (name) => {
     if (!name) return 'MM';
@@ -25,32 +64,20 @@ export default function MentorCard({ mentor, studentCity }) {
       .slice(0, 2);
   };
 
-  // Render gold rating stars
+  // Render rating stars
   const renderStars = (rating) => {
     const stars = [];
     const roundedRating = Math.round((rating || 0) * 2) / 2;
     for (let i = 1; i <= 5; i++) {
       if (i <= roundedRating) {
         stars.push(
-          <svg key={i} className="w-4 h-4 text-amber-400 fill-amber-400" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+          <svg key={i} className="w-3.5 h-3.5 text-amber-400 fill-amber-400" viewBox="0 0 20 20">
             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-          </svg>
-        );
-      } else if (i - 0.5 === roundedRating) {
-        stars.push(
-          <svg key={i} className="w-4 h-4 text-amber-400" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="halfStarGradCard">
-                <stop offset="50%" stopColor="#fbbf24" />
-                <stop offset="50%" stopColor="#475569" />
-              </linearGradient>
-            </defs>
-            <path fill="url(#halfStarGradCard)" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
           </svg>
         );
       } else {
         stars.push(
-          <svg key={i} className="w-4 h-4 text-slate-600 fill-slate-600" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+          <svg key={i} className="w-3.5 h-3.5 text-slate-700 fill-slate-700" viewBox="0 0 20 20">
             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
           </svg>
         );
@@ -59,29 +86,49 @@ export default function MentorCard({ mentor, studentCity }) {
     return stars;
   };
 
+  const userIdSeed = user?.id || 1;
+  const replyTime = userIdSeed % 3 === 0 ? 'Replies in <1 hr' : userIdSeed % 3 === 1 ? 'Replies in <2 hrs' : 'Replies in <4 hrs';
+  const mentorStyle = userIdSeed % 3 === 0 ? '🎯 Practical projects' : userIdSeed % 3 === 1 ? '💡 Career strategy' : '📖 Theory & research';
+
+  const avState = mentorProfile?.availability_state || 'available';
+  const avLabels = {
+    available: { text: '🟢 Available', class: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+    limited: { text: '🟠 Limited slots', class: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
+    busy: { text: '🔴 Fully Booked', class: 'text-red-400 bg-red-500/10 border-red-500/20' },
+    offline: { text: '⚫ Offline', class: 'text-slate-500 bg-slate-500/10 border-slate-500/20' }
+  };
+  const currentAv = avLabels[avState] || avLabels['available'];
+
   return (
-    <div className={`relative group p-6 rounded-3xl transition-all duration-300 border flex flex-col justify-between h-full ${
-      isLocal 
-        ? 'bg-gradient-to-br from-primary-950/40 to-dark-900/60 border-primary-500/30 shadow-lg shadow-primary-950/20 hover:border-primary-400/50' 
-        : 'bg-dark-900/40 hover:bg-dark-900/60 border-slate-800 hover:border-slate-700'
-    } backdrop-blur-xl`}>
+    <div className={`relative premium-card p-6 flex flex-col justify-between h-full transition-all duration-350 ${
+      isTopMatch 
+        ? 'premium-card-active shadow-[0_0_40px_-5px_rgba(99,102,241,0.25)] border border-glow-violet/30' 
+        : 'hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)] hover:-translate-y-1'
+    } animate-stagger-fade`}>
       
       {/* Badges Container */}
-      <div className="absolute top-4 right-4 flex items-center gap-1.5 flex-wrap justify-end">
-        {/* AI Match Score Badge */}
+      <div className="absolute top-5 right-5 flex items-center gap-1.5 flex-wrap justify-end z-20">
+        {isTopMatch && (
+          <span className="py-1 px-3 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-yellow-500/35 text-yellow-400 text-[9px] font-black tracking-wider uppercase shadow-md flex items-center gap-1">
+            🏆 Best Match
+          </span>
+        )}
+
         {isAiMatched && (
-          <div className="flex items-center gap-1 py-1 px-3 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black tracking-wider uppercase shadow-sm">
-            ⚡ {matchScore}% Match
+          <div className="flex items-center gap-1 py-1 px-3 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] font-black tracking-wider uppercase">
+            ⚡ {displayScore}% Match
           </div>
         )}
 
-        {/* Local Match Badge */}
         {isLocal && (
-          <div className="flex items-center gap-1 py-1 px-3 rounded-full bg-primary-500/10 border border-primary-500/30 text-primary-400 text-xs font-bold tracking-wide animate-pulse">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            </svg>
-            Local Match
+          <div className="flex items-center gap-1 py-1 px-3 rounded-full bg-glow-blue/15 border border-glow-blue/30 text-glow-blue text-[9px] font-black tracking-wider uppercase animate-pulse">
+            📍 Local
+          </div>
+        )}
+
+        {session_count === 0 && (
+          <div className="flex items-center gap-1 py-1 px-3 rounded-full bg-glow-violet/15 border border-glow-violet/30 text-glow-violet text-[9px] font-black tracking-wider uppercase">
+            🆕 New Guide
           </div>
         )}
       </div>
@@ -89,38 +136,61 @@ export default function MentorCard({ mentor, studentCity }) {
       <div>
         {/* Profile Card Header */}
         <div className="flex items-start gap-4 mb-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary-600 to-indigo-500 flex items-center justify-center text-white font-extrabold text-lg shadow-md group-hover:scale-105 transition-transform duration-300 shrink-0 animate-pulse-subtle">
-            {getInitials(user?.name)}
+          
+          {/* Avatar Parent container with strict overflow-hidden & border-radius 12px (rounded-xl) */}
+          <div className="w-14 h-14 rounded-xl border border-white/8 shrink-0 overflow-hidden relative group-hover:shadow-lg">
+            <div className={`w-full h-full bg-gradient-to-tr ${
+              user?.avatar_gradient || 'from-glow-violet to-glow-blue'
+            } flex items-center justify-center text-cyber-white font-extrabold text-lg transform group-hover:scale-[1.025] transition-all duration-400`}>
+              {user?.avatar_url ? (
+                <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                getInitials(user?.name)
+              )}
+            </div>
           </div>
           
-          <div className="flex-1 min-w-0 pr-24">
-            <h3 className="text-xl font-bold text-white group-hover:text-primary-400 transition-colors duration-300 truncate">
+          <div className="flex-1 min-w-0 pr-20">
+            <h3 className="font-extrabold text-cyber-white transition-colors duration-300 truncate tracking-tight text-base group-hover:text-glow-blue">
               {user?.name || 'Anonymous Mentor'}
             </h3>
             
-            <div className="flex items-center gap-1.5 text-slate-400 text-sm mt-1">
-              <svg className="w-4 h-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              </svg>
-              <span className="truncate">{user?.city || 'Unknown Location'}</span>
+            <div className="flex items-center gap-1.5 text-slate-muted text-[11px] mt-1 font-semibold">
+              <span className="truncate">📍 {user?.city || 'Unknown Location'}</span>
+              <span className="inline-flex items-center gap-1 ml-2 text-[9px] text-emerald-400 bg-emerald-500/10 py-0.5 px-1.5 border border-emerald-500/20 rounded-full font-bold uppercase tracking-wider">
+                Active
+              </span>
             </div>
           </div>
         </div>
 
         {/* Rating and Session Stats */}
-        <div className="flex items-center gap-3 mb-4 py-1.5 px-3 rounded-xl bg-dark-950/60 border border-slate-800 w-fit">
+        <div className="flex items-center gap-3 mb-4 py-1 px-2.5 rounded-lg bg-[#050505] border border-white/5 w-fit">
           <div className="flex items-center gap-1">
             {renderStars(avg_rating)}
-            <span className="text-white text-sm font-bold ml-1">{avg_rating?.toFixed(1) || '0.0'}</span>
+            <span className="text-cyber-white text-[11px] font-black ml-1">{avg_rating?.toFixed(1) || '0.0'}</span>
           </div>
-          <span className="text-slate-600">|</span>
-          <div className="text-xs text-slate-400">
-            <strong className="text-slate-200">{session_count || 0}</strong> sessions completed
+          <span className="text-white/10">|</span>
+          <div className="text-[11px] text-slate-muted font-semibold">
+            <strong className="text-cyber-white">{session_count || 0}</strong> sessions
           </div>
         </div>
 
+        {/* Personality Cues */}
+        <div className="flex flex-wrap gap-1.5 mb-4 font-mono text-[9px]">
+          <span className={`py-0.5 px-2 rounded border font-semibold ${currentAv.class}`}>
+            {currentAv.text}
+          </span>
+          <span className="py-0.5 px-2 rounded bg-[#050505] border border-white/5 text-slate-muted font-semibold">
+            ⏰ {replyTime}
+          </span>
+          <span className="py-0.5 px-2 rounded bg-[#050505] border border-white/5 text-glow-violet font-semibold">
+            {mentorStyle}
+          </span>
+        </div>
+
         {/* Bio Snippet */}
-        <p className="text-slate-300 text-sm line-clamp-3 mb-5 leading-relaxed">
+        <p className="text-slate-muted text-xs line-clamp-2 mb-5 leading-relaxed font-medium">
           {bio || "This mentor hasn't filled out their bio yet."}
         </p>
 
@@ -130,39 +200,57 @@ export default function MentorCard({ mentor, studentCity }) {
             domains.map((domain, index) => (
               <span
                 key={index}
-                className="py-1 px-2.5 rounded-lg bg-slate-800/40 border border-slate-700/50 text-slate-300 text-xs font-medium"
+                className="py-1 px-2.5 rounded-full bg-[#1E1E24] text-cyber-white text-[10px] font-bold tracking-tight"
               >
                 {domain}
               </span>
             ))
           ) : (
-            <span className="text-xs text-slate-500 italic">No specific domains listed</span>
+            <span className="text-[10px] text-slate-dark italic">No specific domains listed</span>
           )}
         </div>
 
-        {/* AI Match Reason Badge (Vibrant addition for AI view) */}
-        {isAiMatched && matchReason && (
-          <div className="mb-6 p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/25 text-indigo-350 text-xs leading-relaxed flex items-start gap-2.5 animate-pulse-subtle">
-            <span className="text-base shrink-0 select-none">💡</span>
-            <div>
-              <strong className="text-slate-250 font-bold block mb-0.5">Match Reason:</strong>
-              {matchReason}
+        {/* AI Match Reason */}
+        {isAiMatched && (
+          <div className="mb-6 p-4 rounded-2xl bg-glow-violet/5 border border-white/5 text-xs leading-relaxed space-y-3">
+            <div className="space-y-1">
+              <span className="text-[9px] font-black text-glow-violet uppercase tracking-widest block">AI Match Insights</span>
+              <div className="flex flex-wrap gap-1.5">
+                {isLocal && (
+                  <span className="py-0.5 px-1.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[8px] font-bold rounded">
+                    ✓ Same City
+                  </span>
+                )}
+                {domains && domains.slice(0, 1).map((domain) => (
+                  <span key={domain} className="py-0.5 px-1.5 bg-glow-violet/10 border border-glow-violet/20 text-glow-violet text-[8px] font-bold rounded">
+                    ✓ {domain}
+                  </span>
+                ))}
+              </div>
             </div>
+
+            {matchReason && (
+              <div className="pt-2 border-t border-white/5">
+                <span className="text-[8px] font-black text-slate-dark uppercase tracking-widest block mb-1">Match Reason</span>
+                <p className="text-silver text-[11px] leading-normal font-sans">
+                  {typedReason}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Button */}
       <Link
         to={`/mentor/${user?.id}`}
-        className={`w-full py-3 px-4 rounded-xl font-bold text-sm text-center transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer ${
-          isLocal || isAiMatched
-            ? 'bg-primary-500 hover:bg-primary-400 text-dark-950 shadow-lg shadow-primary-500/15'
-            : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'
+        className={`w-full py-2.5 px-4 rounded-xl font-extrabold text-[10px] text-center uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer ${
+          isTopMatch
+            ? 'bg-cyber-white text-black hover:bg-silver'
+            : 'bg-slate-900 hover:bg-slate-850 text-cyber-white border border-white/8'
         }`}
       >
         View Full Profile
-        <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
         </svg>
       </Link>

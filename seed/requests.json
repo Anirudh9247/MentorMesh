@@ -1,0 +1,272 @@
+[
+  {
+    "student_email": "ramu@student.com",
+    "mentor_email": "raj@mentor.com",
+    "status": "pending",
+    "answer_1": "I want to understand AWS deployment pipelines and cloud scaling.",
+    "answer_2": "I completed some basic Docker tutorials online and set up local containers.",
+    "answer_3": "Help me design a simple multi-stage Dockerfile for my Node.js backend.",
+    "time_offset_minutes": 15
+  },
+  {
+    "student_email": "ananya@student.com",
+    "mentor_email": "harsha@mentor.com",
+    "status": "accepted",
+    "answer_1": "I want mentorship for writing and reviewing AI research papers on transformers.",
+    "answer_2": "I implemented vanilla attention heads in PyTorch using synthetic data.",
+    "answer_3": "Help me structure my experiments section and evaluate confidence metrics.",
+    "time_offset_minutes": 120
+  },
+  {
+    "student_email": "vikram@student.com",
+    "mentor_email": "arjun@mentor.com",
+    "status": "accepted",
+    "answer_1": "I want to master React state management and component lifecycle structures.",
+    "answer_2": "I built a couple of basic counter apps and todo lists using standard state hooks.",
+    "answer_3": "Review my project directory structure and explain custom context providers.",
+    "time_offset_minutes": 180
+  },
+  {
+    "student_email": "vikram@student.com",
+    "mentor_email": "sanjay@mentor.com",
+    "status": "pending",
+    "answer_1": "I need help understanding responsive grid systems in CSS and custom themes.",
+    "answer_2": "I read articles on CSS flexbox but struggle with alignment on mobile screen sizes.",
+    "answer_3": "Review my portfolio homepage CSS layout for 30 minutes to fix alignment.",
+    "time_offset_minutes": 360
+  },
+  {
+    "student_email": "aditya@student.com",
+    "mentor_email": "pooja@mentor.com",
+    "status": "pending",
+    "answer_1": "I want to build my first Flutter application for a local delivery service.",
+    "answer_2": "I installed the Flutter SDK and successfully ran the default counter app in the emulator.",
+    "answer_3": "Help me set up simple page routing and explain how state propagates down widgets.",
+    "time_offset_minutes": 720
+  },
+  {
+    "student_email": "divya_student@student.com",
+    "mentor_email": "pranav@mentor.com",
+    "status": "accepted",
+    "answer_1": "I want to understand writing high-concurrency Go servers and using WebSockets.",
+    "answer_2": "I built basic HTTP endpoints in Go using the standard library net/http package.",
+    "answer_3": "Review my chat application routing flow and explain Go channel safety.",
+    "time_offset_minutes": 1440
+  },
+  {
+    "student_email": "kiran@student.com",
+    "mentor_email": "alok@mentor.com",
+    "status": "accepted",
+    "answer_1": "I need to understand writing Terraform configurations for multi-zone AWS VPCs.",
+    "answer_2": "I read Terraform documentation and created a basic single-instance EC2 script.",
+    "answer_3": "Explain subnet routing definitions and state management rules.",
+    "time_offset_minutes": 2880
+  },
+  {
+    "student_email": "pooja_student@student.com",
+    "mentor_email": "aditi@mentor.com",
+    "status": "pending",
+    "answer_1": "I want to organize my Figma design components and build a clean UX portfolio.",
+    "answer_2": "I designed 3 mobile mockups but they feel unstructured and lack consistent components.",
+    "answer_3": "Review my mockups, suggest component strategies, and give portfolio feedback.",
+    "time_offset_minutes": 10
+  },
+  {
+    "student_email": "rahul_student@student.com",
+    "mentor_email": "divya@mentor.com",
+    "status": "accepted",
+    "answer_1": "I want to solve complex dynamic programming questions and prepare for interviews.",
+    "answer_2": "I resolved basic array questions but get stuck on recursion tree optimizations.",
+    "answer_3": "Help me trace recursion trees for knapsack problems and write memoized functions.",
+    "time_offset_minutes": 4320
+  },
+  {
+    "student_email": "sid@student.com",
+    "mentor_email": "siddharth@mentor.com",
+    "status": "pending",
+    "answer_1": "I want to understand Solidity smart contract auditing and security pitfalls.",
+    "answer_2": "I completed basic cryptozombies tutorials and wrote a basic token transfer contract.",
+    "answer_3": "Review my token contract for reentrancy bugs and discuss compiler versions.",
+    "time_offset_minutes": 5760
+  },
+  {
+    "student_email": "meera_student@student.com",
+    "mentor_email": "meera@mentor.com",
+    "status": "accepted",
+    "answer_1": "I need help optimization complex window functions in PostgreSQL.",
+    "answer_2": "I wrote standard group by queries but struggle with partition definitions.",
+    "answer_3": "Help me optimize my queries on mock datasets to calculate running totals.",
+    "time_offset_minutes": 7200
+  },
+  {
+    "student_email": "harini@student.com",
+    "mentor_email": "rohan@mentor.com",
+    "status": "accepted",
+    "answer_1": "I want to understand application security audits and pen-testing.",
+    "answer_2": "I set up a local Kali Linux environment and ran basic vulnerability scans.",
+    "answer_3": "Show me how to perform manual web application assessments for SQL injection.",
+    "time_offset_minutes": 8640
+  },
+  {
+    "student_email": "sanjay_student@student.com",
+    "mentor_email": "anirudh@mentor.com",
+    "status": "pending",
+    "answer_1": "I want to learn database normalization and setting up Django relationship models.",
+    "answer_2": "I created single-model tables but struggle with foreign key declarations.",
+    "answer_3": "Help me model a simple e-commerce schema with order-item relationships in Django.",
+    "time_offset_minutes": 30
+  },
+  {
+    "student_email": "ramu@student.com",
+    "mentor_email": "rohan@mentor.com",
+    "status": "declined",
+    "answer_1": "I want to learn network security firewalls from you.",
+    "answer_2": "I read some basic security guides online but lack real labs.",
+    "answer_3": "Review my local setup and teach me penetration scanning techniques.",
+    "time_offset_minutes": 10080
+  },
+  {
+    "student_email": "ananya@student.com",
+    "mentor_email": "karthik@mentor.com",
+    "status": "declined",
+    "answer_1": "I want to discuss startup fundraising models and pitch decks.",
+    "answer_2": "I have an AI idea and wrote a brief 2-page project outline.",
+    "answer_3": "Review my outline and advise me on early equity distribution strategies.",
+    "time_offset_minutes": 11520
+  },
+  {
+    "student_email": "ramu@student.com",
+    "mentor_email": "rohan_khanna@mentor.com",
+    "status": "declined",
+    "answer_1": "I want basic advice on network scanning tools.",
+    "answer_2": "I installed basic scanner binaries but don't understand port states.",
+    "answer_3": "Walk me through analyzing basic port scans for my local router.",
+    "time_offset_minutes": 12960
+  },
+  {
+    "student_email": "kiran@student.com",
+    "mentor_email": "malhotra@mentor.com",
+    "status": "pending",
+    "answer_1": "I want to optimize docker container sizes and reduce build times.",
+    "answer_2": "I have huge image sizes (>1GB) and want to learn multi-stage layers.",
+    "answer_3": "Review my Dockerfile and help me restructure base builder caches.",
+    "time_offset_minutes": 55
+  },
+  {
+    "student_email": "sanjay_student@student.com",
+    "mentor_email": "harsha@mentor.com",
+    "status": "pending",
+    "answer_1": "I want to build my first neural network model using PyTorch.",
+    "answer_2": "I read articles on artificial neurons but have not written the training loops.",
+    "answer_3": "Help me implement a simple 2-layer classifier on synthetic numbers.",
+    "time_offset_minutes": 85
+  },
+  {
+    "student_email": "pooja_student@student.com",
+    "mentor_email": "ritu@mentor.com",
+    "status": "accepted",
+    "answer_1": "I want to understand developer handoff frameworks in Figma.",
+    "answer_2": "I completed some layouts but developers complain about missing assets.",
+    "answer_3": "Explain how to set up export rules, padding guides, and design tokens.",
+    "time_offset_minutes": 3500
+  },
+  {
+    "student_email": "rahul_student@student.com",
+    "mentor_email": "deepak@mentor.com",
+    "status": "accepted",
+    "answer_1": "I want to master graph algorithms like Dijkstra and standard BFS.",
+    "answer_2": "I solved recursion problems but struggle with matrix path traversals.",
+    "answer_3": "Help me optimize matrix traversal complexity and discuss edge cases.",
+    "time_offset_minutes": 4200
+  },
+  {
+    "student_email": "sid@student.com",
+    "mentor_email": "tarun@mentor.com",
+    "status": "accepted",
+    "answer_1": "I want to understand networking port scans and command line Linux.",
+    "answer_2": "I read manual pages for network scanners but lack real terminal practice.",
+    "answer_3": "Show me how to configure firewalls using Linux standard networking tools.",
+    "time_offset_minutes": 5000
+  },
+  {
+    "student_email": "meera_student@student.com",
+    "mentor_email": "swati@mentor.com",
+    "status": "accepted",
+    "answer_1": "I want help building clean pandas data cleaning pipelines.",
+    "answer_2": "I write basic scripts but they break when encountering null values.",
+    "answer_3": "Review my dataframe processing code and show me robust null replacements.",
+    "time_offset_minutes": 6000
+  },
+  {
+    "student_email": "harini@student.com",
+    "mentor_email": "divya@mentor.com",
+    "status": "pending",
+    "answer_1": "I want to optimize algorithms and learn data structures.",
+    "answer_2": "I know basic arrays but need help with trees and node graphs.",
+    "answer_3": "Help me implement tree traversal routines for search functions.",
+    "time_offset_minutes": 110
+  },
+  {
+    "student_email": "divya_student@student.com",
+    "mentor_email": "kavita@mentor.com",
+    "status": "pending",
+    "answer_1": "I want a mock interview and feedback on my backend engineering resume.",
+    "answer_2": "I applied to several internship openings but have not received response calls.",
+    "answer_3": "Analyze my project bullet points and structure them for better metrics.",
+    "time_offset_minutes": 140
+  },
+  {
+    "student_email": "ananya@student.com",
+    "mentor_email": "ritu@mentor.com",
+    "status": "pending",
+    "answer_1": "I want usability feedback on my deep learning interface design.",
+    "answer_2": "I created basic layouts showing training runs but need layout ideas.",
+    "answer_3": "Review my dashboard wireframes and suggest improvements for developers.",
+    "time_offset_minutes": 210
+  },
+  {
+    "student_email": "ramu@student.com",
+    "mentor_email": "amit@mentor.com",
+    "status": "pending",
+    "answer_1": "I want to learn basic Python server structures from you.",
+    "answer_2": "I know basic Python syntax but do not know how to run a web server.",
+    "answer_3": "Show me how to configure a simple API handler in Python.",
+    "time_offset_minutes": 250
+  },
+  {
+    "student_email": "aditya@student.com",
+    "mentor_email": "kavita@mentor.com",
+    "status": "accepted",
+    "answer_1": "I want help optimizing my mobile dev resume and mock interview practice.",
+    "answer_2": "I built two Flutter projects but don't know how to detail them on my CV.",
+    "answer_3": "Help me translate my code contributions into impact bullet points.",
+    "time_offset_minutes": 1800
+  },
+  {
+    "student_email": "divya_student@student.com",
+    "mentor_email": "amit@mentor.com",
+    "status": "accepted",
+    "answer_1": "I want to build a simple Python backend project from scratch.",
+    "answer_2": "I have basic script knowledge but have not registered dynamic routing urls.",
+    "answer_3": "Guide me in running my first flask application on local ports.",
+    "time_offset_minutes": 2900
+  },
+  {
+    "student_email": "kiran@student.com",
+    "mentor_email": "raj@mentor.com",
+    "status": "declined",
+    "answer_1": "I want to learn Kubernetes setups in cloud systems.",
+    "answer_2": "I set up local cluster binaries but they run slowly on my laptop.",
+    "answer_3": "Explain node sizing and deployment variables in cloud networks.",
+    "time_offset_minutes": 15000
+  },
+  {
+    "student_email": "aditya@student.com",
+    "mentor_email": "ritu@mentor.com",
+    "status": "declined",
+    "answer_1": "I want usability advice on mobile navigation patterns.",
+    "answer_2": "I designed standard slide tabs but they feel awkward on small screens.",
+    "answer_3": "Review my mobile menu prototypes and give alternative navigation ideas.",
+    "time_offset_minutes": 16000
+  }
+]
