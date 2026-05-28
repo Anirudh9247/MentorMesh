@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import client from '../api/client';
+import { StarsBackground } from '../components/animate-ui/StarsBackground';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -136,6 +137,9 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-dark-canvas text-silver p-6 relative overflow-hidden bg-grid-dots">
+      {/* Stars Background */}
+      <StarsBackground className="absolute inset-0 z-0 opacity-40 pointer-events-none" />
+
       <div className="radial-spotlight"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-glow-blue/10 rounded-full blur-[140px] pointer-events-none animate-float"></div>
 
