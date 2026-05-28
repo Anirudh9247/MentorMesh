@@ -3,8 +3,19 @@ import { Link, useNavigate } from 'react-router-dom';
 import { interpolate } from 'polymorph-js';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { RippleButton } from '../components/animate-ui/RippleButton';
+import { RadialIntro } from '../components/animate-ui/RadialIntro';
 
 gsap.registerPlugin(ScrollTrigger);
+
+const ORBIT_ITEMS = [
+  { id: 1, name: 'Harsha', src: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80' },
+  { id: 2, name: 'Raj', src: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80' },
+  { id: 3, name: 'Ananya', src: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80' },
+  { id: 4, name: 'Vikram', src: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80' },
+  { id: 5, name: 'Siddharth', src: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&q=80' },
+  { id: 6, name: 'Neha', src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=100&q=80' },
+];
 
 export default function Welcome() {
   const navigate = useNavigate();
@@ -500,14 +511,22 @@ export default function Welcome() {
               </p>
 
               <div className="pt-4">
-                <button
+                <RippleButton
                   onClick={handleHeroCta}
-                  className="py-3.5 px-8 rounded-full bg-cyber-white text-black font-extrabold text-sm interactive-element hover:scale-103 cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(255,255,255,0.3)]"
+                  className="shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(255,255,255,0.3)]"
                 >
                   {isLoggedIn ? "Access Workspace" : "Explore Mentors Now"}
-                </button>
+                </RippleButton>
               </div>
             </div>
+
+            {/* Radial Orbit Showcase */}
+            <section className="w-full max-w-lg mx-auto mt-16 animate-stagger-fade delay-100 flex flex-col items-center">
+              <span className="text-[9px] font-black text-glow-violet uppercase tracking-widest block mb-4">
+                Connect Orbit // Active Guides Nearby
+              </span>
+              <RadialIntro orbitItems={ORBIT_ITEMS} />
+            </section>
 
             {/* Bento Feature Grid */}
             <section className="w-full mt-24 grid grid-cols-1 md:grid-cols-4 gap-6 animate-stagger-fade delay-200">

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import StudentHeader from '../components/StudentHeader';
 import client from '../api/client';
+import { TabGroup, TabList, Tab, TabPanels, TabPanel } from '../components/animate-ui/RadixTabs';
 
 export default function StudentDashboard() {
   const [student, setStudent] = useState({
@@ -337,233 +338,271 @@ export default function StudentDashboard() {
 
           </div>
 
-          {/* Right Column (70% - Performance and Mapping Widget) */}
-          <div className="lg:col-span-7 space-y-8">
+          {/* Right Column (70% - Performance and Mapping Widget with RadixTabs) */}
+          <div className="lg:col-span-7">
             
-            {/* Real-Time Proximity Mapping Widget */}
-            <div className="premium-card p-6 shadow-2xl relative overflow-hidden flex flex-col space-y-4 animate-stagger-fade delay-200">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <h3 className="text-sm font-black text-cyber-white uppercase tracking-wider">Locality Proximity Radar</h3>
-                  <p className="text-[10px] text-slate-muted">Real-time telemetry tracking of local active mentors in {student.city}</p>
-                </div>
-                
-                {/* Layer Control buttons */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowRings(!showRings)}
-                    className={`py-1 px-2.5 rounded-lg border text-[9px] font-black uppercase tracking-wider cursor-pointer ${
-                      showRings ? 'bg-glow-blue/15 border-glow-blue/30 text-glow-blue' : 'bg-[#050505] border-white/5 text-slate-muted'
-                    }`}
-                  >
-                    Rings
-                  </button>
-                  <button
-                    onClick={() => setShowClusters(!showClusters)}
-                    className={`py-1 px-2.5 rounded-lg border text-[9px] font-black uppercase tracking-wider cursor-pointer ${
-                      showClusters ? 'bg-glow-violet/15 border-glow-violet/30 text-glow-violet' : 'bg-[#050505] border-white/5 text-slate-muted'
-                    }`}
-                  >
-                    Pins
-                  </button>
-                </div>
-              </div>
+            <TabGroup defaultValue="analytics">
+              <TabList>
+                <Tab value="analytics">Performance Analytics</Tab>
+                <Tab value="radar">Guide Proximity Radar</Tab>
+              </TabList>
 
-              {/* Asymmetric Map Layout: 70% Map canvas, 30% telemetry logs */}
-              <div className="grid grid-cols-1 md:grid-cols-10 gap-4 border border-white/8 rounded-2xl overflow-hidden bg-[#050505]/40 min-h-[350px]">
-                
-                {/* 70% Map Canvas (SVG Vector Map) */}
-                <div className="md:col-span-7 relative h-[350px] md:h-auto overflow-hidden bg-[#050505]">
-                  
-                  {/* Status Indicator */}
-                  <div className="absolute top-4 left-4 z-20 bg-[#0d0d11]/85 backdrop-blur-md py-1.5 px-3 rounded-full border border-white/8 text-[9px] font-mono flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>Radar active: {student.city}</span>
-                  </div>
-
-                  {/* Navigation Zoom Controls */}
-                  <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-1.5">
-                    <button
-                      onClick={() => setZoomLevel(prev => Math.min(2.5, prev + 0.25))}
-                      className="w-7 h-7 rounded-lg bg-[#0d0d11]/90 border border-white/8 text-cyber-white flex items-center justify-center font-bold text-sm cursor-pointer hover:border-white transition-colors"
-                    >
-                      +
-                    </button>
-                    <button
-                      onClick={() => setZoomLevel(prev => Math.max(0.5, prev - 0.25))}
-                      className="w-7 h-7 rounded-lg bg-[#0d0d11]/90 border border-white/8 text-cyber-white flex items-center justify-center font-bold text-sm cursor-pointer hover:border-white transition-colors"
-                    >
-                      -
-                    </button>
-                    <button
-                      onClick={recenterMapOnSelf}
-                      className="w-7 h-7 rounded-lg bg-[#0d0d11]/90 border border-white/8 text-cyber-white flex items-center justify-center font-bold text-[10px] cursor-pointer hover:border-white transition-colors"
-                      title="Recenter Map"
-                    >
-                      ⌖
-                    </button>
-                  </div>
-
-                  {/* Vector SVG Grid Layout */}
-                  <svg 
-                    className="w-full h-full cursor-grab active:cursor-grabbing select-none"
-                    viewBox="0 0 500 200"
-                  >
-                    <defs>
-                      <pattern id="mapGrid" width="30" height="30" patternUnits="userSpaceOnUse">
-                        <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(255,255,255,0.02)" strokeWidth="1" />
-                      </pattern>
-                    </defs>
-
-                    {/* Background Grid Pattern */}
-                    <rect width="100%" height="100%" fill="url(#mapGrid)" />
-
-                    {/* SVG Map Camera translation group */}
-                    <g 
-                      transform={`translate(${(250 - mapCenter.x) * zoomLevel}, ${(100 - mapCenter.y) * zoomLevel}) scale(${zoomLevel})`} 
-                      className="origin-center transition-transform duration-500 ease-out"
-                    >
-                      {/* Concentric Proximity Range Rings */}
-                      {showRings && (
-                        <>
-                          <circle cx="250" cy="100" r="40" fill="none" stroke="rgba(56, 189, 248, 0.08)" strokeWidth="1.5" strokeDasharray="3,3" />
-                          <circle cx="250" cy="100" r="80" fill="none" stroke="rgba(56, 189, 248, 0.05)" strokeWidth="1.5" strokeDasharray="5,5" />
-                          <circle cx="250" cy="100" r="120" fill="none" stroke="rgba(56, 189, 248, 0.02)" strokeWidth="1.5" strokeDasharray="5,5" />
-                        </>
-                      )}
-
-                      {/* Route Polyline Trail */}
-                      <polyline
-                        points={routeHistory.map(p => `${p.x},${p.y}`).join(' ')}
-                        fill="none"
-                        stroke="#6366F1"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeDasharray="2,2"
-                        opacity="0.85"
-                      />
-
-                      {/* Student own pulsing marker */}
-                      <g transform={`translate(${myPos.x}, ${myPos.y})`}>
-                        <circle r="12" fill="rgba(56, 189, 248, 0.15)" className="animate-ping" />
-                        <circle r="6" fill="#38BDF8" className="stroke-dark-canvas" strokeWidth="1.5" />
-                      </g>
-
-                      {/* Mentor nodes/entity clusters */}
-                      {showClusters && localMentors.map((mentor) => {
-                        const isFocused = selectedMentorEntity?.id === mentor.id;
-                        return (
-                          <g 
-                            key={mentor.id} 
-                            transform={`translate(${mentor.x}, ${mentor.y})`}
-                            onClick={() => focusMapOnMentor(mentor)}
-                            className="cursor-pointer"
-                          >
-                            <circle 
-                              r={isFocused ? "10" : "8"} 
-                              fill={`${mentor.color}22`} 
-                              className={isFocused ? 'animate-pulse' : ''} 
-                            />
-                            <circle 
-                              r={isFocused ? "6" : "4.5"} 
-                              fill={mentor.color} 
-                              className="stroke-dark-canvas transition-all" 
-                              strokeWidth="1.5" 
-                            />
-                            {/* Short label */}
-                            <text
-                              y="-12"
-                              textAnchor="middle"
-                              fill="#FFFFFF"
-                              className="text-[7px] font-bold font-mono tracking-tight bg-black/80 px-1 pointer-events-none"
-                            >
-                              {mentor.name.split(' ')[0]}
-                            </text>
-                          </g>
-                        );
-                      })}
-                    </g>
-                  </svg>
-                </div>
-
-                {/* 30% Telemetry Activity sidebar */}
-                <div className="md:col-span-3 border-t md:border-t-0 md:border-l border-white/8 flex flex-col justify-between p-4 bg-[#0D0D11]/60">
-                  <div className="space-y-4">
-                    <span className="text-[9px] font-black text-slate-muted uppercase tracking-wider block">Telemetry Sidebar</span>
+              <TabPanels className="mt-2">
+                <TabPanel value="analytics" className="space-y-6">
+                  {/* Active Courses */}
+                  <div className="premium-card p-6 space-y-6">
+                    <h3 className="text-sm font-black text-slate-muted uppercase tracking-widest border-b border-white/5 pb-3">
+                      Active Courses & Mentorships
+                    </h3>
                     
-                    {/* List local entities */}
-                    <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
-                      {localMentors.length === 0 ? (
-                        <div className="text-[10px] text-slate-muted italic py-2">
-                          No mentors currently active in {student.city} coordinates.
-                        </div>
-                      ) : (
-                        localMentors.map((mentor) => (
-                          <button
-                            key={mentor.id}
-                            onClick={() => focusMapOnMentor(mentor)}
-                            className={`w-full text-left p-2 rounded-lg text-[10px] border transition-all cursor-pointer block ${
-                              selectedMentorEntity?.id === mentor.id
-                                ? 'bg-white/5 border-white/10 text-cyber-white'
-                                : 'bg-transparent border-transparent hover:bg-white/3 text-slate-muted'
-                            }`}
-                          >
-                            <div className="flex justify-between font-bold">
-                              <span className="truncate">{mentor.name}</span>
-                              <span className="text-glow-blue shrink-0">{mentor.distanceKm} km</span>
+                    <div className="space-y-6">
+                      {mockCourses.map((course, i) => (
+                        <div key={i} className="space-y-2">
+                          <div className="flex justify-between items-start text-xs">
+                            <div>
+                              <h4 className="font-bold text-cyber-white">{course.title}</h4>
+                              <span className="text-[11px] text-slate-muted">Mentor: {course.mentor}</span>
                             </div>
-                            <div className="text-[8px] text-slate-dark mt-0.5">{mentor.specialty}</div>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </div>
+                            <span className="text-glow-blue font-bold">{course.progress}%</span>
+                          </div>
 
-                  {/* Location History Logs */}
-                  <div className="border-t border-white/5 pt-3 space-y-2 mt-3 shrink-0">
-                    <span className="text-[8px] font-mono text-slate-dark uppercase tracking-wider block">Real-time Location Log</span>
-                    <div className="space-y-1.5 max-h-[90px] overflow-y-auto font-mono text-[9px] text-slate-muted leading-tight">
-                      {locationLogs.map((log, index) => (
-                        <div key={index} className="flex gap-1.5">
-                          <span className="text-slate-dark shrink-0">[{log.time.split(' ')[0]}]</span>
-                          <span className="truncate">{log.desc}</span>
+                          <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden">
+                            <div 
+                              className="bg-gradient-to-r from-glow-violet to-glow-blue h-full rounded-full progress-fill-anim"
+                              style={{ width: `${course.progress}%` }}
+                            ></div>
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
-                </div>
 
-              </div>
-            </div>
-
-            {/* Active Courses */}
-            <div className="premium-card p-6 space-y-6">
-              <h3 className="text-sm font-black text-slate-muted uppercase tracking-widest border-b border-white/5 pb-3">
-                Active Courses & Mentorships
-              </h3>
-              
-              <div className="space-y-6">
-                {mockCourses.map((course, i) => (
-                  <div key={i} className="space-y-2">
-                    <div className="flex justify-between items-start text-xs">
-                      <div>
-                        <h4 className="font-bold text-cyber-white">{course.title}</h4>
-                        <span className="text-[11px] text-slate-muted">Mentor: {course.mentor}</span>
+                  {/* Performance Metrics Overview Card */}
+                  <div className="premium-card p-6 space-y-4">
+                    <h3 className="text-sm font-black text-slate-muted uppercase tracking-widest border-b border-white/5 pb-3">
+                      Weekly Milestones Status
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="bg-[#050505] p-4 rounded-xl border border-white/5 text-center">
+                        <span className="text-cyber-white text-lg font-black block">12.5h</span>
+                        <span className="text-[9px] text-slate-muted uppercase tracking-wider">Hours Studied</span>
                       </div>
-                      <span className="text-glow-blue font-bold">{course.progress}%</span>
-                    </div>
-
-                    <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden">
-                      <div 
-                        className="bg-gradient-to-r from-glow-violet to-glow-blue h-full rounded-full progress-fill-anim"
-                        style={{ width: `${course.progress}%` }}
-                      ></div>
+                      <div className="bg-[#050505] p-4 rounded-xl border border-white/5 text-center">
+                        <span className="text-cyber-white text-lg font-black block">4</span>
+                        <span className="text-[9px] text-slate-muted uppercase tracking-wider">Active Pings</span>
+                      </div>
+                      <div className="bg-[#050505] p-4 rounded-xl border border-white/5 text-center">
+                        <span className="text-cyber-white text-lg font-black block">85%</span>
+                        <span className="text-[9px] text-slate-muted uppercase tracking-wider">Attendance</span>
+                      </div>
+                      <div className="bg-[#050505] p-4 rounded-xl border border-white/5 text-center">
+                        <span className="text-cyber-white text-lg font-black block">A+</span>
+                        <span className="text-[9px] text-slate-muted uppercase tracking-wider">Current Grade</span>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                </TabPanel>
+
+                <TabPanel value="radar" className="space-y-6">
+                  {/* Real-Time Proximity Mapping Widget */}
+                  <div className="premium-card p-6 shadow-2xl relative overflow-hidden flex flex-col space-y-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div>
+                        <h3 className="text-sm font-black text-cyber-white uppercase tracking-wider">Locality Proximity Radar</h3>
+                        <p className="text-[10px] text-slate-muted">Real-time telemetry tracking of local active mentors in {student.city}</p>
+                      </div>
+                      
+                      {/* Layer Control buttons */}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setShowRings(!showRings)}
+                          className={`py-1 px-2.5 rounded-lg border text-[9px] font-black uppercase tracking-wider cursor-pointer ${
+                            showRings ? 'bg-glow-blue/15 border-glow-blue/30 text-glow-blue' : 'bg-[#050505] border-white/5 text-slate-muted'
+                          }`}
+                        >
+                          Rings
+                        </button>
+                        <button
+                          onClick={() => setShowClusters(!showClusters)}
+                          className={`py-1 px-2.5 rounded-lg border text-[9px] font-black uppercase tracking-wider cursor-pointer ${
+                            showClusters ? 'bg-glow-violet/15 border-glow-violet/30 text-glow-violet' : 'bg-[#050505] border-white/5 text-slate-muted'
+                          }`}
+                        >
+                          Pins
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Asymmetric Map Layout: 70% Map canvas, 30% telemetry logs */}
+                    <div className="grid grid-cols-1 md:grid-cols-10 gap-4 border border-white/8 rounded-2xl overflow-hidden bg-[#050505]/40 min-h-[350px]">
+                      
+                      {/* 70% Map Canvas (SVG Vector Map) */}
+                      <div className="md:col-span-7 relative h-[350px] md:h-auto overflow-hidden bg-[#050505]">
+                        
+                        {/* Status Indicator */}
+                        <div className="absolute top-4 left-4 z-20 bg-[#0d0d11]/85 backdrop-blur-md py-1.5 px-3 rounded-full border border-white/8 text-[9px] font-mono flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                          <span>Radar active: {student.city}</span>
+                        </div>
+
+                        {/* Navigation Zoom Controls */}
+                        <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-1.5">
+                          <button
+                            onClick={() => setZoomLevel(prev => Math.min(2.5, prev + 0.25))}
+                            className="w-7 h-7 rounded-lg bg-[#0d0d11]/90 border border-white/8 text-cyber-white flex items-center justify-center font-bold text-sm cursor-pointer hover:border-white transition-colors"
+                          >
+                            +
+                          </button>
+                          <button
+                            onClick={() => setZoomLevel(prev => Math.max(0.5, prev - 0.25))}
+                            className="w-7 h-7 rounded-lg bg-[#0d0d11]/90 border border-white/8 text-cyber-white flex items-center justify-center font-bold text-sm cursor-pointer hover:border-white transition-colors"
+                          >
+                            -
+                          </button>
+                          <button
+                            onClick={recenterMapOnSelf}
+                            className="w-7 h-7 rounded-lg bg-[#0d0d11]/90 border border-white/8 text-cyber-white flex items-center justify-center font-bold text-[10px] cursor-pointer hover:border-white transition-colors"
+                            title="Recenter Map"
+                          >
+                            ⌖
+                          </button>
+                        </div>
+
+                        {/* Vector SVG Grid Layout */}
+                        <svg 
+                          className="w-full h-full cursor-grab active:cursor-grabbing select-none"
+                          viewBox="0 0 500 200"
+                        >
+                          <defs>
+                            <pattern id="mapGrid" width="30" height="30" patternUnits="userSpaceOnUse">
+                              <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(255,255,255,0.02)" strokeWidth="1" />
+                            </pattern>
+                          </defs>
+
+                          {/* Background Grid Pattern */}
+                          <rect width="100%" height="100%" fill="url(#mapGrid)" />
+
+                          {/* SVG Map Camera translation group */}
+                          <g 
+                            transform={`translate(${(250 - mapCenter.x) * zoomLevel}, ${(100 - mapCenter.y) * zoomLevel}) scale(${zoomLevel})`} 
+                            className="origin-center transition-transform duration-500 ease-out"
+                          >
+                            {/* Concentric Proximity Range Rings */}
+                            {showRings && (
+                              <>
+                                <circle cx="250" cy="100" r="40" fill="none" stroke="rgba(56, 189, 248, 0.08)" strokeWidth="1.5" strokeDasharray="3,3" />
+                                <circle cx="250" cy="100" r="80" fill="none" stroke="rgba(56, 189, 248, 0.05)" strokeWidth="1.5" strokeDasharray="5,5" />
+                                <circle cx="250" cy="100" r="120" fill="none" stroke="rgba(56, 189, 248, 0.02)" strokeWidth="1.5" strokeDasharray="5,5" />
+                              </>
+                            )}
+
+                            {/* Route Polyline Trail */}
+                            <polyline
+                              points={routeHistory.map(p => `${p.x},${p.y}`).join(' ')}
+                              fill="none"
+                              stroke="#6366F1"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeDasharray="2,2"
+                              opacity="0.85"
+                            />
+
+                            {/* Student own pulsing marker */}
+                            <g transform={`translate(${myPos.x}, ${myPos.y})`}>
+                              <circle r="12" fill="rgba(56, 189, 248, 0.15)" className="animate-ping" />
+                              <circle r="6" fill="#38BDF8" className="stroke-dark-canvas" strokeWidth="1.5" />
+                            </g>
+
+                            {/* Mentor nodes/entity clusters */}
+                            {showClusters && localMentors.map((mentor) => {
+                              const isFocused = selectedMentorEntity?.id === mentor.id;
+                              return (
+                                <g 
+                                  key={mentor.id} 
+                                  transform={`translate(${mentor.x}, ${mentor.y})`}
+                                  onClick={() => focusMapOnMentor(mentor)}
+                                  className="cursor-pointer"
+                                >
+                                  <circle 
+                                    r={isFocused ? "10" : "8"} 
+                                    fill={`${mentor.color}22`} 
+                                    className={isFocused ? 'animate-pulse' : ''} 
+                                  />
+                                  <circle 
+                                    r={isFocused ? "6" : "4.5"} 
+                                    fill={mentor.color} 
+                                    className="stroke-dark-canvas transition-all" 
+                                    strokeWidth="1.5" 
+                                  />
+                                  {/* Short label */}
+                                  <text
+                                    y="-12"
+                                    textAnchor="middle"
+                                    fill="#FFFFFF"
+                                    className="text-[7px] font-bold font-mono tracking-tight bg-black/80 px-1 pointer-events-none"
+                                  >
+                                    {mentor.name.split(' ')[0]}
+                                  </text>
+                                </g>
+                              );
+                            })}
+                          </g>
+                        </svg>
+                      </div>
+
+                      {/* 30% Telemetry Activity sidebar */}
+                      <div className="md:col-span-3 border-t md:border-t-0 md:border-l border-white/8 flex flex-col justify-between p-4 bg-[#0D0D11]/60">
+                        <div className="space-y-4">
+                          <span className="text-[9px] font-black text-slate-muted uppercase tracking-wider block">Telemetry Sidebar</span>
+                          
+                          {/* List local entities */}
+                          <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                            {localMentors.length === 0 ? (
+                              <div className="text-[10px] text-slate-muted italic py-2">
+                                No mentors currently active in {student.city} coordinates.
+                              </div>
+                            ) : (
+                              localMentors.map((mentor) => (
+                                <button
+                                  key={mentor.id}
+                                  onClick={() => focusMapOnMentor(mentor)}
+                                  className={`w-full text-left p-2 rounded-lg text-[10px] border transition-all cursor-pointer block ${
+                                    selectedMentorEntity?.id === mentor.id
+                                      ? 'bg-white/5 border-white/10 text-cyber-white'
+                                      : 'bg-transparent border-transparent hover:bg-white/3 text-slate-muted'
+                                  }`}
+                                >
+                                  <div className="flex justify-between font-bold">
+                                    <span className="truncate">{mentor.name}</span>
+                                    <span className="text-glow-blue shrink-0">{mentor.distanceKm} km</span>
+                                  </div>
+                                  <div className="text-[8px] text-slate-dark mt-0.5">{mentor.specialty}</div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Location History Logs */}
+                        <div className="border-t border-white/5 pt-3 space-y-2 mt-3 shrink-0">
+                          <span className="text-[8px] font-mono text-slate-dark uppercase tracking-wider block">Real-time Location Log</span>
+                          <div className="space-y-1.5 max-h-[90px] overflow-y-auto font-mono text-[9px] text-slate-muted leading-tight">
+                            {locationLogs.map((log, index) => (
+                              <div key={index} className="flex gap-1.5">
+                                <span className="text-slate-dark shrink-0">[{log.time.split(' ')[0]}]</span>
+                                <span className="truncate">{log.desc}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </TabPanel>
+              </TabPanels>
+            </TabGroup>
 
           </div>
 

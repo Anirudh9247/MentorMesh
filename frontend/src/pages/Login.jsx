@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import client from '../api/client';
+import { StarsBackground } from '../components/animate-ui/StarsBackground';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -108,6 +109,9 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-dark-canvas text-silver p-6 relative overflow-hidden bg-grid-dots">
+      {/* Stars Background */}
+      <StarsBackground className="absolute inset-0 z-0 opacity-40 pointer-events-none" />
+
       {/* Spotlight and glowing backgrounds */}
       <div className="radial-spotlight"></div>
       <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-glow-violet/10 rounded-full blur-[100px] pointer-events-none animate-float"></div>
