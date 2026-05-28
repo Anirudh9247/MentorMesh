@@ -106,8 +106,8 @@ export default function MentorCard({ mentor, studentCity, isTopMatch = false }) 
         : 'hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.2)] hover:-translate-y-1'
     } animate-stagger-fade`}>
       
-      {/* Badges Container */}
-      <div className="absolute top-5 right-5 flex items-center gap-1.5 flex-wrap justify-end z-20">
+      {/* Badges Container - placed in relative layout flow at the top of the card */}
+      <div className="flex flex-wrap items-center gap-1.5 mb-4 z-20">
         {isTopMatch && (
           <span className="py-1 px-3 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-yellow-500/35 text-yellow-400 text-[9px] font-black tracking-wider uppercase shadow-md flex items-center gap-1">
             🏆 Best Match
@@ -133,127 +133,236 @@ export default function MentorCard({ mentor, studentCity, isTopMatch = false }) 
         )}
       </div>
 
-      <div>
-        {/* Profile Card Header */}
-        <div className="flex items-start gap-4 mb-4">
-          
-          {/* Avatar Parent container with strict overflow-hidden & border-radius 12px (rounded-xl) */}
-          <div className="w-14 h-14 rounded-xl border border-white/8 shrink-0 overflow-hidden relative group-hover:shadow-lg">
-            <div className={`w-full h-full bg-gradient-to-tr ${
-              user?.avatar_gradient || 'from-glow-violet to-glow-blue'
-            } flex items-center justify-center text-cyber-white font-extrabold text-lg transform group-hover:scale-[1.025] transition-all duration-400`}>
-              {user?.avatar_url ? (
-                <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
-              ) : (
-                getInitials(user?.name)
-              )}
+      {isTopMatch ? (
+        /* Top Match 2-Column Responsive Layout */
+        <div className="md:grid md:grid-cols-2 md:gap-8 flex-grow">
+          {/* Left Column - Profile info */}
+          <div className="flex flex-col justify-between space-y-4">
+            <div>
+              {/* Profile Card Header */}
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-14 h-14 rounded-xl border border-white/8 shrink-0 overflow-hidden relative">
+                  <div className="w-full h-full bg-gradient-to-tr from-glow-violet to-glow-blue flex items-center justify-center text-cyber-white font-extrabold text-lg">
+                    {user?.avatar_url ? (
+                      <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
+                    ) : (
+                      getInitials(user?.name)
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-extrabold text-cyber-white tracking-tight text-xl truncate">
+                    {user?.name || 'Anonymous Mentor'}
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-slate-muted text-xs mt-1 font-semibold">
+                    <span>📍 {user?.city || 'Unknown Location'}</span>
+                    <span className="inline-flex items-center gap-1 ml-2 text-[9px] text-emerald-400 bg-emerald-500/10 py-0.5 px-1.5 border border-emerald-500/20 rounded-full font-bold uppercase tracking-wider">
+                      Active
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Rating and Session Stats */}
+              <div className="flex items-center gap-3 mb-4 py-1 px-2.5 rounded-lg bg-[#050505] border border-white/5 w-fit">
+                <div className="flex items-center gap-1">
+                  {renderStars(avg_rating)}
+                  <span className="text-cyber-white text-[11px] font-black ml-1">{avg_rating?.toFixed(1) || '0.0'}</span>
+                </div>
+                <span className="text-white/10">|</span>
+                <div className="text-[11px] text-slate-muted font-semibold">
+                  <strong className="text-cyber-white">{session_count || 0}</strong> sessions
+                </div>
+              </div>
+
+              {/* Personality Cues */}
+              <div className="flex flex-wrap gap-1.5 mb-4 font-mono text-[9px]">
+                <span className={`py-0.5 px-2 rounded border font-semibold ${currentAv.class}`}>
+                  {currentAv.text}
+                </span>
+                <span className="py-0.5 px-2 rounded bg-[#050505] border border-white/5 text-slate-muted font-semibold">
+                  ⏰ {replyTime}
+                </span>
+                <span className="py-0.5 px-2 rounded bg-[#050505] border border-white/5 text-glow-violet font-semibold">
+                  {mentorStyle}
+                </span>
+              </div>
+
+              {/* Bio Snippet */}
+              <p className="text-slate-muted text-xs leading-relaxed font-medium mb-4">
+                {bio || "This mentor hasn't filled out their bio yet."}
+              </p>
+            </div>
+
+            {/* Domain Badges */}
+            <div className="flex flex-wrap gap-1.5 pt-2">
+              {domains && domains.map((domain, index) => (
+                <span
+                  key={index}
+                  className="py-1 px-2.5 rounded-full bg-[#1E1E24] text-cyber-white text-[10px] font-bold tracking-tight"
+                >
+                  {domain}
+                </span>
+              ))}
             </div>
           </div>
-          
-          <div className="flex-1 min-w-0 pr-20">
-            <h3 className="font-extrabold text-cyber-white transition-colors duration-300 truncate tracking-tight text-base group-hover:text-glow-blue">
-              {user?.name || 'Anonymous Mentor'}
-            </h3>
-            
-            <div className="flex items-center gap-1.5 text-slate-muted text-[11px] mt-1 font-semibold">
-              <span className="truncate">📍 {user?.city || 'Unknown Location'}</span>
-              <span className="inline-flex items-center gap-1 ml-2 text-[9px] text-emerald-400 bg-emerald-500/10 py-0.5 px-1.5 border border-emerald-500/20 rounded-full font-bold uppercase tracking-wider">
-                Active
-              </span>
-            </div>
-          </div>
-        </div>
 
-        {/* Rating and Session Stats */}
-        <div className="flex items-center gap-3 mb-4 py-1 px-2.5 rounded-lg bg-[#050505] border border-white/5 w-fit">
-          <div className="flex items-center gap-1">
-            {renderStars(avg_rating)}
-            <span className="text-cyber-white text-[11px] font-black ml-1">{avg_rating?.toFixed(1) || '0.0'}</span>
-          </div>
-          <span className="text-white/10">|</span>
-          <div className="text-[11px] text-slate-muted font-semibold">
-            <strong className="text-cyber-white">{session_count || 0}</strong> sessions
-          </div>
-        </div>
+          {/* Right Column - Matching Coordinates */}
+          <div className="flex flex-col justify-between mt-6 md:mt-0 space-y-4">
+            {isAiMatched && (
+              <div className="p-4 rounded-2xl bg-glow-violet/5 border border-white/5 text-xs leading-relaxed space-y-3 flex-grow">
+                <div className="space-y-1">
+                  <span className="text-[9px] font-black text-glow-violet uppercase tracking-widest block">AI Match Insights</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {isLocal && (
+                      <span className="py-0.5 px-1.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[8px] font-bold rounded">
+                        ✓ Same City
+                      </span>
+                    )}
+                    {domains && domains.slice(0, 1).map((domain) => (
+                      <span key={domain} className="py-0.5 px-1.5 bg-glow-violet/10 border border-glow-violet/20 text-glow-violet text-[8px] font-bold rounded">
+                        ✓ {domain}
+                      </span>
+                    ))}
+                  </div>
+                </div>
 
-        {/* Personality Cues */}
-        <div className="flex flex-wrap gap-1.5 mb-4 font-mono text-[9px]">
-          <span className={`py-0.5 px-2 rounded border font-semibold ${currentAv.class}`}>
-            {currentAv.text}
-          </span>
-          <span className="py-0.5 px-2 rounded bg-[#050505] border border-white/5 text-slate-muted font-semibold">
-            ⏰ {replyTime}
-          </span>
-          <span className="py-0.5 px-2 rounded bg-[#050505] border border-white/5 text-glow-violet font-semibold">
-            {mentorStyle}
-          </span>
-        </div>
-
-        {/* Bio Snippet */}
-        <p className="text-slate-muted text-xs line-clamp-2 mb-5 leading-relaxed font-medium">
-          {bio || "This mentor hasn't filled out their bio yet."}
-        </p>
-
-        {/* Domain Badges */}
-        <div className="flex flex-wrap gap-1.5 mb-5">
-          {domains && domains.length > 0 ? (
-            domains.map((domain, index) => (
-              <span
-                key={index}
-                className="py-1 px-2.5 rounded-full bg-[#1E1E24] text-cyber-white text-[10px] font-bold tracking-tight"
-              >
-                {domain}
-              </span>
-            ))
-          ) : (
-            <span className="text-[10px] text-slate-dark italic">No specific domains listed</span>
-          )}
-        </div>
-
-        {/* AI Match Reason */}
-        {isAiMatched && (
-          <div className="mb-6 p-4 rounded-2xl bg-glow-violet/5 border border-white/5 text-xs leading-relaxed space-y-3">
-            <div className="space-y-1">
-              <span className="text-[9px] font-black text-glow-violet uppercase tracking-widest block">AI Match Insights</span>
-              <div className="flex flex-wrap gap-1.5">
-                {isLocal && (
-                  <span className="py-0.5 px-1.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[8px] font-bold rounded">
-                    ✓ Same City
-                  </span>
+                {matchReason && (
+                  <div className="pt-2 border-t border-white/5">
+                    <span className="text-[8px] font-black text-slate-dark uppercase tracking-widest block mb-1">Match Reason</span>
+                    <p className="text-silver text-[11px] leading-normal font-sans typing-cursor">
+                      {typedReason}
+                    </p>
+                  </div>
                 )}
-                {domains && domains.slice(0, 1).map((domain) => (
-                  <span key={domain} className="py-0.5 px-1.5 bg-glow-violet/10 border border-glow-violet/20 text-glow-violet text-[8px] font-bold rounded">
-                    ✓ {domain}
+              </div>
+            )}
+
+            <Link
+              to={`/mentor/${user?.id}`}
+              className="w-full py-3 px-4 rounded-xl bg-cyber-white text-black font-extrabold text-xs text-center uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer shadow-md hover:bg-silver"
+            >
+              View Full Profile
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
+        </div>
+      ) : (
+        /* Standard Single-Column Card Layout */
+        <div className="flex flex-col justify-between h-full flex-grow">
+          <div>
+            {/* Profile Card Header */}
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-14 h-14 rounded-xl border border-white/8 shrink-0 overflow-hidden relative">
+                <div className="w-full h-full bg-gradient-to-tr from-glow-violet to-glow-blue flex items-center justify-center text-cyber-white font-extrabold text-lg transform group-hover:scale-[1.025] transition-all duration-400">
+                  {user?.avatar_url ? (
+                    <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
+                  ) : (
+                    getInitials(user?.name)
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <h3 className="font-extrabold text-cyber-white tracking-tight text-base truncate group-hover:text-glow-blue transition-colors">
+                  {user?.name || 'Anonymous Mentor'}
+                </h3>
+                <div className="flex items-center gap-1.5 text-slate-muted text-[11px] mt-1 font-semibold">
+                  <span className="truncate">📍 {user?.city || 'Unknown Location'}</span>
+                  <span className="inline-flex items-center gap-1 ml-2 text-[9px] text-emerald-400 bg-emerald-500/10 py-0.5 px-1.5 border border-emerald-500/20 rounded-full font-bold uppercase tracking-wider">
+                    Active
                   </span>
-                ))}
+                </div>
               </div>
             </div>
 
-            {matchReason && (
-              <div className="pt-2 border-t border-white/5">
-                <span className="text-[8px] font-black text-slate-dark uppercase tracking-widest block mb-1">Match Reason</span>
-                <p className="text-silver text-[11px] leading-normal font-sans">
-                  {typedReason}
-                </p>
+            {/* Rating and Session Stats */}
+            <div className="flex items-center gap-3 mb-4 py-1 px-2.5 rounded-lg bg-[#050505] border border-white/5 w-fit">
+              <div className="flex items-center gap-1">
+                {renderStars(avg_rating)}
+                <span className="text-cyber-white text-[11px] font-black ml-1">{avg_rating?.toFixed(1) || '0.0'}</span>
+              </div>
+              <span className="text-white/10">|</span>
+              <div className="text-[11px] text-slate-muted font-semibold">
+                <strong className="text-cyber-white">{session_count || 0}</strong> sessions
+              </div>
+            </div>
+
+            {/* Personality Cues */}
+            <div className="flex flex-wrap gap-1.5 mb-4 font-mono text-[9px]">
+              <span className={`py-0.5 px-2 rounded border font-semibold ${currentAv.class}`}>
+                {currentAv.text}
+              </span>
+              <span className="py-0.5 px-2 rounded bg-[#050505] border border-white/5 text-slate-muted font-semibold">
+                ⏰ {replyTime}
+              </span>
+              <span className="py-0.5 px-2 rounded bg-[#050505] border border-white/5 text-glow-violet font-semibold">
+                {mentorStyle}
+              </span>
+            </div>
+
+            {/* Bio Snippet */}
+            <p className="text-slate-muted text-xs line-clamp-2 mb-5 leading-relaxed font-medium">
+              {bio || "This mentor hasn't filled out their bio yet."}
+            </p>
+
+            {/* Domain Badges */}
+            <div className="flex flex-wrap gap-1.5 mb-5">
+              {domains && domains.map((domain, index) => (
+                <span
+                  key={index}
+                  className="py-1 px-2.5 rounded-full bg-[#1E1E24] text-cyber-white text-[10px] font-bold tracking-tight"
+                >
+                  {domain}
+                </span>
+              ))}
+            </div>
+
+            {/* AI Match Reason */}
+            {isAiMatched && (
+              <div className="mb-6 p-4 rounded-2xl bg-glow-violet/5 border border-white/5 text-xs leading-relaxed space-y-3">
+                <div className="space-y-1">
+                  <span className="text-[9px] font-black text-glow-violet uppercase tracking-widest block">AI Match Insights</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {isLocal && (
+                      <span className="py-0.5 px-1.5 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[8px] font-bold rounded">
+                        ✓ Same City
+                      </span>
+                    )}
+                    {domains && domains.slice(0, 1).map((domain) => (
+                      <span key={domain} className="py-0.5 px-1.5 bg-glow-violet/10 border border-glow-violet/20 text-glow-violet text-[8px] font-bold rounded">
+                        ✓ {domain}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {matchReason && (
+                  <div className="pt-2 border-t border-white/5">
+                    <span className="text-[8px] font-black text-slate-dark uppercase tracking-widest block mb-1">Match Reason</span>
+                    <p className="text-silver text-[11px] leading-normal font-sans typing-cursor">
+                      {typedReason}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
-      </div>
 
-      <Link
-        to={`/mentor/${user?.id}`}
-        className={`w-full py-2.5 px-4 rounded-xl font-extrabold text-[10px] text-center uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer ${
-          isTopMatch
-            ? 'bg-cyber-white text-black hover:bg-silver'
-            : 'bg-slate-900 hover:bg-slate-850 text-cyber-white border border-white/8'
-        }`}
-      >
-        View Full Profile
-        <svg className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
-        </svg>
-      </Link>
+          <Link
+            to={`/mentor/${user?.id}`}
+            className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-850 text-cyber-white border border-white/8 font-extrabold text-[10px] text-center uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            View Full Profile
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
