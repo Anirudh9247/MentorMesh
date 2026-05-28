@@ -1,19 +1,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+:root {
+  --color-canvas-bg: #050505;
+  --color-card-bg: #0D0D11;
+  --color-card-bg-lighter: #121216;
+  --color-text-white: #FFFFFF;
+  --color-text-silver: #EAEAEA;
+  --color-text-muted: #94A3B8;
+  --color-text-dark: #475569;
+  --color-border-card: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme="light"] {
+  --color-canvas-bg: #F8FAFC;
+  --color-card-bg: #FFFFFF;
+  --color-card-bg-lighter: #F1F5F9;
+  --color-text-white: #0F172A;
+  --color-text-silver: #1E293B;
+  --color-text-muted: #64748B;
+  --color-text-dark: #94A3B8;
+  --color-border-card: rgba(0, 0, 0, 0.08);
+}
+
 @theme {
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   
   /* Modern Premium Palette */
-  --color-dark-canvas: #050505;
-  --color-dark-card: #0D0D11;
-  --color-dark-card-lighter: #121216;
-  --color-cyber-white: #FFFFFF;
-  --color-silver: #EAEAEA;
+  --color-dark-canvas: var(--color-canvas-bg);
+  --color-dark-card: var(--color-card-bg);
+  --color-dark-card-lighter: var(--color-card-bg-lighter);
+  --color-cyber-white: var(--color-text-white);
+  --color-silver: var(--color-text-silver);
+  --color-slate-muted: var(--color-text-muted);
+  --color-slate-dark: var(--color-text-dark);
+  
   --color-glow-blue: #38BDF8;
   --color-glow-violet: #6366F1;
-  --color-slate-muted: #94A3B8;
-  --color-slate-dark: #475569;
   
   --animate-float: float-anim 6s ease-in-out infinite;
   --animate-grid-mesh: grid-mesh-anim 20s linear infinite;
@@ -379,4 +402,35 @@ body {
     margin-right: 0.8rem;
   }
 }
+
+/* 3D Flip Card Layout Helpers */
+.perspective-1000 {
+  perspective: 1000px;
+}
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Material Ink Ripple Animation */
+@keyframes ripple-anim {
+  from {
+    transform: scale(0);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+.animate-ripple {
+  animation: ripple-anim 0.5s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+}
+
 
