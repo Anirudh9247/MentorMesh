@@ -46,30 +46,45 @@ export default function Conversation() {
     }
   }, [selectedConnection]);
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputText.trim() || !selectedConnection) return;
 
+    const studentMsgText = inputText;
     const studentMessage = {
       id: Date.now(),
       sender: 'student',
-      text: inputText,
+      text: studentMsgText,
       timestamp: 'Just now'
     };
 
     setMessages(prev => [...prev, studentMessage]);
     setInputText('');
 
-    // Simulate realistic mentor response after a 1.2s delay
-    setTimeout(() => {
+    try {
+      const res = await client.post('/mentors/chat-reply', {
+        mentor_id: selectedConnection.mentor_id,
+        student_message: studentMsgText
+      });
       const mentorReply = {
         id: Date.now() + 1,
         sender: 'mentor',
-        text: `Got it! Let me review that. I'm open to discussing this in detail. Let's sync up on coordinates soon.`,
+        text: res.data.reply,
         timestamp: 'Just now'
       };
       setMessages(prev => [...prev, mentorReply]);
-    }, 1200);
+    } catch (err) {
+      console.error("Failed to fetch simulated chat response:", err);
+      setTimeout(() => {
+        const mentorReply = {
+          id: Date.now() + 1,
+          sender: 'mentor',
+          text: `Thanks for the details! Let's connect on coordinates soon to discuss this in detail.`,
+          timestamp: 'Just now'
+        };
+        setMessages(prev => [...prev, mentorReply]);
+      }, 1000);
+    }
   };
 
   const getInitials = (name) => {
@@ -78,7 +93,10 @@ export default function Conversation() {
   };
 
   return (
-    <div className="h-dvh bg-dark-canvas text-silver flex flex-col justify-between overflow-hidden bg-grid-dots">
+    <div 
+      style={{ height: '100dvh' }}
+      className="bg-dark-canvas text-silver flex flex-col justify-between overflow-hidden bg-grid-dots"
+    >
       <div className="radial-spotlight"></div>
       
       {/* Shared Nav Header */}
@@ -87,12 +105,12 @@ export default function Conversation() {
       </div>
 
       {/* Main Workspace Frame (Strict 100vh sub-layout) */}
-      <main className="flex-grow flex p-4 md:p-8 overflow-hidden relative z-10 h-[calc(100dvh-80px)]">
+      <main 
+        style={{ height: 'calc(100dvh - 80px)' }}
+        className="flex-grow flex p-4 md:p-8 overflow-hidden relative z-10"
+      >
         
-        {/* Focus overlay canvas when input is active */}
-        <div className={`absolute inset-0 bg-[#050505]/30 backdrop-blur-[2px] transition-opacity duration-300 pointer-events-none z-10 ${
-          isInputFocused ? 'opacity-100' : 'opacity-0'
-        }`}></div>
+
 
         <div className="w-full h-full max-w-7xl mx-auto flex rounded-3xl border border-white/8 bg-[#0D0D11]/70 backdrop-blur-xl overflow-hidden shadow-2xl">
           
@@ -142,8 +160,12 @@ export default function Conversation() {
                           : 'hover:bg-white/3 border border-transparent'
                       }`}
                     >
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-glow-violet to-glow-blue flex items-center justify-center text-cyber-white font-extrabold text-sm shadow-md shrink-0">
-                        {getInitials(conn.mentor?.name)}
+                      <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-white/10 shadow-md">
+                        <img 
+                          src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(conn.mentor?.name || 'Mentor')}`} 
+                          alt={conn.mentor?.name} 
+                          className="w-full h-full object-cover bg-slate-900"
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-center">
@@ -166,8 +188,12 @@ export default function Conversation() {
                 {/* Active Chat Header */}
                 <div className="p-4 border-b border-white/8 flex items-center justify-between bg-[#0D0D11]/40 shrink-0">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-glow-violet to-glow-blue flex items-center justify-center text-cyber-white font-extrabold text-xs">
-                      {getInitials(selectedConnection.mentor?.name)}
+                    <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 border border-white/10 shadow-md">
+                      <img 
+                        src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(selectedConnection.mentor?.name || 'Mentor')}`} 
+                        alt={selectedConnection.mentor?.name} 
+                        className="w-full h-full object-cover bg-slate-900"
+                      />
                     </div>
                     <div>
                       <h3 className="text-xs font-bold text-cyber-white">{selectedConnection.mentor?.name}</h3>

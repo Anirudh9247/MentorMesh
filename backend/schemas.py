@@ -35,9 +35,22 @@ class UserRead(BaseModel):
     city: str
     avatar_url: Optional[str] = None
     avatar_gradient: Optional[str] = None
+    focus_area: Optional[str] = None
+    learnt_so_far: Optional[str] = None
+    achievements: Optional[str] = None
+    next_target: Optional[str] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    city: Optional[str] = None
+    focus_area: Optional[str] = None
+    learnt_so_far: Optional[str] = None
+    achievements: Optional[str] = None
+    next_target: Optional[str] = None
 
 
 # ==========================================
@@ -59,6 +72,7 @@ class MentorProfileUpdate(BaseModel):
     bio: Optional[str] = None
     max_sessions_per_month: Optional[int] = Field(None, ge=1, le=20)
     what_ill_discuss: Optional[str] = None
+    availability_state: Optional[str] = None
 
 class MentorProfileRead(MentorProfileBase):
     id: int
@@ -66,6 +80,8 @@ class MentorProfileRead(MentorProfileBase):
     avg_rating: float
     session_count: int
     user: UserRead
+    accepted_requests_count: int = 0
+    reviews: List[ReviewRead] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -152,6 +168,7 @@ class ReviewRead(BaseModel):
     session_id: int
     rating: int
     note: Optional[str]
+    student_name: Optional[str] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

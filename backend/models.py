@@ -26,6 +26,10 @@ class User(Base):
     city = Column(String, nullable=False, index=True)
     avatar_url = Column(String, nullable=True)
     avatar_gradient = Column(String, nullable=True)
+    focus_area = Column(String, nullable=True)
+    learnt_so_far = Column(String, nullable=True)
+    achievements = Column(String, nullable=True)
+    next_target = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     # Relationships

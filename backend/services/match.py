@@ -239,3 +239,64 @@ def run_ai_match(student_goals: str, student_city: str, mentors: List[Dict[str, 
 
   # Fallback to local python heuristics if LLM failed
   return offline_match_fallback(student_goals, student_city, mentors)
+
+
+def generate_chat_reply(mentor_name: str, mentor_bio: str, mentor_domains: list, student_name: str, student_city: str, student_message: str) -> str:
+  """
+  Generates a context-aware simulated chat reply from the mentor.
+  """
+  specialties = ", ".join(mentor_domains) if mentor_domains else "General Mentorship"
+  
+  prompt = (
+      f"You are simulating {mentor_name}, a professional tech mentor on the MentorMesh platform.\n"
+      f"Your bio: {mentor_bio}\n"
+      f"Your expertise areas: {specialties}\n"
+      f"You are chatting with a student named {student_name} from {student_city}.\n"
+      f"Respond to their message in a natural, helpful, encouraging, and professional tone.\n"
+      f"Keep your response short and concise (1 to 3 sentences maximum), suitable for a chat interface.\n"
+      f"Do not include any headers, prefixes like '{mentor_name}:', or markdown code blocks. Just reply as the person.\n"
+      f"Student message: {student_message}"
+  )
+
+  reply_text = None
+
+  if ANTHROPIC_API_KEY:
+      try:
+          client = anthropic.Anthropic(api_key= ANTHROPIC_API_KEY)
+          response = client.messages.create(
+              model=CLAUDE_MODEL,
+              max_tokens=200,
+              system="You are a professional mentor simulating a chat conversation.",
+              messages=[
+                  {"role": "user", "content": prompt}
+              ]
+          )
+          reply_text = response.content[0].text.strip()
+      except Exception as e:
+          logger.error(f"Chat simulation Anthropic API failed: {e}")
+
+  if not reply_text and OPENAI_API_KEY:
+      try:
+          client = openai.OpenAI(api_key=OPENAI_API_KEY)
+          response = client.chat.completions.create(
+              model=OPENAI_MODEL,
+              messages=[
+                  {"role": "system", "content": "You are a professional mentor simulating a chat conversation."},
+                  {"role": "user", "content": prompt}
+              ],
+              max_tokens=200
+          )
+          reply_text = response.choices[0].message.content.strip()
+      except Exception as e:
+          logger.error(f"Chat simulation OpenAI API failed: {e}")
+
+  if not reply_text:
+      import random
+      replies = [
+          f"Thanks for reaching out, {student_name}! That sounds like a solid starting point. I'd love to help you review your architecture and discuss some concrete roadmap targets.",
+          f"Hi {student_name}! I'm glad you're looking into {mentor_domains[0] if mentor_domains else 'this domain'}. Let's coordinate a quick 15-minute sync this week to explore this.",
+          f"Understood, {student_name}. Let me know what your availability looks like this week so we can schedule our first session."
+      ]
+      reply_text = random.choice(replies)
+
+  return reply_text

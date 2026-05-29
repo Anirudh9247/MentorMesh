@@ -136,12 +136,12 @@ export default function MentorCard({ mentor, studentCity, isTopMatch = false }) 
               {/* Profile Card Header */}
               <div className="flex items-start gap-4 mb-4">
                 <div className="w-14 h-14 rounded-xl border border-white/8 shrink-0 overflow-hidden relative">
-                  <div className="w-full h-full bg-gradient-to-tr from-glow-violet to-glow-blue flex items-center justify-center text-cyber-white font-extrabold text-lg">
-                    {user?.avatar_url ? (
-                      <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
-                    ) : (
-                      getInitials(user?.name)
-                    )}
+                  <div className="w-full h-full shrink-0 overflow-hidden relative">
+                    <img 
+                      src={user?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(user?.name || 'Mentor')}`} 
+                      alt={user?.name} 
+                      className="w-full h-full object-cover bg-slate-900" 
+                    />
                   </div>
                 </div>
                 
@@ -276,13 +276,11 @@ export default function MentorCard({ mentor, studentCity, isTopMatch = false }) 
         {/* Profile Card Header */}
         <div className="flex items-start gap-4 mb-4">
           <div className="w-14 h-14 rounded-xl border border-white/8 shrink-0 overflow-hidden relative">
-            <div className="w-full h-full bg-gradient-to-tr from-glow-violet to-glow-blue flex items-center justify-center text-cyber-white font-extrabold text-lg">
-              {user?.avatar_url ? (
-                <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
-              ) : (
-                getInitials(user?.name)
-              )}
-            </div>
+            <img 
+              src={user?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(user?.name || 'Mentor')}`} 
+              alt={user?.name} 
+              className="w-full h-full object-cover bg-slate-900" 
+            />
           </div>
           
           <div className="flex-1 min-w-0">

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import User
-from ..schemas import UserRegister, UserLogin, Token, UserRead
+from ..schemas import UserRegister, UserLogin, Token, UserRead, UserUpdate
 from ..auth import get_password_hash, verify_password, create_access_token, get_current_user
 
 router = APIRouter(
@@ -81,5 +81,32 @@ def get_me(current_user: User = Depends(get_current_user)):
     """
     Returns the currently authenticated user's details.
     """
+    return current_user
+
+
+@router.put("/me", response_model=UserRead)
+def update_me(
+    payload: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Updates the authenticated user's profile details.
+    """
+    if payload.name is not None:
+        current_user.name = payload.name
+    if payload.city is not None:
+        current_user.city = payload.city
+    if payload.focus_area is not None:
+        current_user.focus_area = payload.focus_area
+    if payload.learnt_so_far is not None:
+        current_user.learnt_so_far = payload.learnt_so_far
+    if payload.achievements is not None:
+        current_user.achievements = payload.achievements
+    if payload.next_target is not None:
+        current_user.next_target = payload.next_target
+
+    db.commit()
+    db.refresh(current_user)
     return current_user
 

@@ -9,6 +9,7 @@ export default function MentorDashboard() {
     bio: '',
     max_sessions_per_month: 4,
     what_ill_discuss: '',
+    availability_state: 'available',
   });
 
   const [loading, setLoading] = useState(true);
@@ -66,6 +67,7 @@ export default function MentorDashboard() {
           bio: data.bio || '',
           max_sessions_per_month: data.max_sessions_per_month || 4,
           what_ill_discuss: data.what_ill_discuss || '',
+          availability_state: data.availability_state || 'available',
         });
         setStats({
           avgRating: data.avg_rating || 0.0,
@@ -115,6 +117,7 @@ export default function MentorDashboard() {
       bio: profile.bio,
       max_sessions_per_month: profile.max_sessions_per_month,
       what_ill_discuss: profile.what_ill_discuss,
+      availability_state: profile.availability_state,
     };
 
     try {
@@ -124,6 +127,7 @@ export default function MentorDashboard() {
       setProfile((prev) => ({
         ...prev,
         domains: res.data.domains ? res.data.domains.join(', ') : '',
+        availability_state: res.data.availability_state || 'available',
       }));
       setStats((prev) => ({
         ...prev,
@@ -368,8 +372,12 @@ export default function MentorDashboard() {
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-glow-violet to-glow-blue flex items-center justify-center text-cyber-white font-extrabold text-lg shadow-md shrink-0">
-                          {req.student?.name ? req.student.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2) : 'S'}
+                        <div className="w-12 h-12 rounded-2xl overflow-hidden shrink-0 border border-white/10 shadow-md bg-slate-900 flex items-center justify-center">
+                          <img 
+                            src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(req.student?.name || 'Student')}`} 
+                            alt={req.student?.name} 
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
@@ -466,21 +474,41 @@ export default function MentorDashboard() {
               />
             </div>
 
-            <div>
-              <label htmlFor="max_sessions_per_month" className="text-[10px] font-black text-slate-muted block mb-2 uppercase tracking-wider font-mono">
-                Max connection slots per month
-              </label>
-              <input
-                type="number"
-                name="max_sessions_per_month"
-                id="max_sessions_per_month"
-                required
-                min="1"
-                max="20"
-                value={profile.max_sessions_per_month}
-                onChange={handleChange}
-                className="w-28 bg-[#050505] border border-white/8 text-cyber-white rounded-xl px-4 py-3 outline-none focus:border-white focus:ring-0 transition-all text-xs"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="max_sessions_per_month" className="text-[10px] font-black text-slate-muted block mb-2 uppercase tracking-wider font-mono">
+                  Max connection slots per month
+                </label>
+                <input
+                  type="number"
+                  name="max_sessions_per_month"
+                  id="max_sessions_per_month"
+                  required
+                  min="1"
+                  max="20"
+                  value={profile.max_sessions_per_month}
+                  onChange={handleChange}
+                  className="w-full bg-[#050505] border border-white/8 text-cyber-white rounded-xl px-4 py-3 outline-none focus:border-white focus:ring-0 transition-all text-xs"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="availability_state" className="text-[10px] font-black text-slate-muted block mb-2 uppercase tracking-wider font-mono">
+                  Availability Status
+                </label>
+                <select
+                  name="availability_state"
+                  id="availability_state"
+                  value={profile.availability_state}
+                  onChange={handleChange}
+                  className="w-full bg-[#050505] border border-white/8 text-cyber-white rounded-xl px-4 py-3 outline-none focus:border-white focus:ring-0 transition-all text-xs"
+                >
+                  <option value="available">🟢 Available</option>
+                  <option value="limited">🟠 Limited slots</option>
+                  <option value="busy">🔴 Fully Booked</option>
+                  <option value="offline">⚫ Offline</option>
+                </select>
+              </div>
             </div>
 
             <div>

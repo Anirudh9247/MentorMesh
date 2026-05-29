@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import MentorCard from '../components/MentorCard';
+import MentorMap from '../components/MentorMap';
 import StudentHeader from '../components/StudentHeader';
 
 const POPULAR_DOMAINS = [
@@ -27,6 +28,7 @@ export default function Browse() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDomain, setSelectedDomain] = useState('');
   const [localOnly, setLocalOnly] = useState(false);
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'map'
 
   // AI Matchmaker state
   const [isAiMode, setIsAiMode] = useState(false);
@@ -46,6 +48,35 @@ export default function Browse() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [expandedRequests, setExpandedRequests] = useState({});
 
+  // Review states in Browse
+  const [showBrowseReviewModal, setShowBrowseReviewModal] = useState(false);
+  const [selectedMentorForReview, setSelectedMentorForReview] = useState(null);
+  const [browseReviewRating, setBrowseReviewRating] = useState(5);
+  const [browseReviewNote, setBrowseReviewNote] = useState('');
+  const [browseReviewSubmitting, setBrowseReviewSubmitting] = useState(false);
+  
+  const handleBrowseReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!browseReviewNote.trim() || !selectedMentorForReview) return;
+    setBrowseReviewSubmitting(true);
+    try {
+      await client.post(`/mentors/${selectedMentorForReview.id}/reviews`, {
+        rating: browseReviewRating,
+        note: browseReviewNote
+      });
+      alert("Review submitted successfully!");
+      setShowBrowseReviewModal(false);
+      setBrowseReviewNote('');
+      setSelectedMentorForReview(null);
+      await fetchSentRequestsList();
+    } catch (err) {
+      console.error("Failed to submit review:", err);
+      alert(err.response?.data?.detail || "Failed to submit review.");
+    } finally {
+      setBrowseReviewSubmitting(false);
+    }
+  };
+
   // Fetch current user and mentors list on mount
   useEffect(() => {
     const initPage = async () => {
@@ -56,7 +87,18 @@ export default function Browse() {
         const userRes = await client.get('/auth/me');
         currentUser = userRes.data;
         setStudent(userRes.data);
-        localStorage.setItem('studentDetails', JSON.stringify(userRes.data));
+        const mappedDetails = {
+          name: currentUser.name,
+          city: currentUser.city,
+          focusArea: currentUser.focus_area || '',
+          learntSoFar: currentUser.learnt_so_far || '',
+          achievements: currentUser.achievements || '',
+          nextTarget: currentUser.next_target || '',
+          focus_area: currentUser.focus_area || '',
+          learnt_so_far: currentUser.learnt_so_far || '',
+          next_target: currentUser.next_target || ''
+        };
+        localStorage.setItem('studentDetails', JSON.stringify(mappedDetails));
       } catch (err) {
         console.error("Failed to load user info:", err);
         const cachedUser = localStorage.getItem('user');
@@ -198,10 +240,20 @@ export default function Browse() {
   useEffect(() => {
     if (aiLoading && matchLoadingStep === 3 && apiDone) {
       setAiMatches(pendingMatches);
-      setIsAiMode(true);
       setAiLoading(false);
+      setIsAiMode(true);
+
+      // Cache matches in localStorage for cold-start page reloads
+      const cacheObj = {};
+      pendingMatches.forEach(match => {
+        cacheObj[match.user_id] = {
+          score: match.score,
+          reason: match.reason
+        };
+      });
+      localStorage.setItem('mentorMatchScores', JSON.stringify(cacheObj));
     }
-  }, [matchLoadingStep, apiDone, pendingMatches, aiLoading]);
+  }, [aiLoading, matchLoadingStep, apiDone, pendingMatches]);
 
   const handleExitAiMode = () => {
     setIsAiMode(false);
@@ -525,6 +577,18 @@ export default function Browse() {
                               {req.status}
                             </span>
                             
+                            {req.status === 'accepted' && (
+                              <button
+                                onClick={() => {
+                                  setSelectedMentorForReview(req.mentor);
+                                  setShowBrowseReviewModal(true);
+                                }}
+                                className="py-1.5 px-3 rounded-lg bg-glow-blue/15 border border-glow-blue/30 text-glow-blue hover:text-cyber-white text-xs font-black uppercase transition-all cursor-pointer"
+                              >
+                                ★ Rate
+                              </button>
+                            )}
+                            
                             <button
                               onClick={() => toggleRequestExpand(req.id)}
                               className="py-1.5 px-3 rounded-lg bg-[#050505] border border-white/8 text-slate-muted hover:text-cyber-white text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
@@ -581,14 +645,40 @@ export default function Browse() {
                     )}
                   </div>
 
-                  {(searchQuery || selectedDomain || localOnly || isAiMode) && (
-                    <button
-                      onClick={handleClearFilters}
-                      className="py-1 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-muted text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5"
-                    >
-                      Clear Filters
-                    </button>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {/* View Mode Toggle switcher */}
+                    <div className="flex rounded-xl bg-slate-950 border border-slate-900 p-1">
+                      <button
+                        onClick={() => setViewMode('list')}
+                        className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          viewMode === 'list'
+                            ? 'bg-slate-900 border border-slate-800 text-cyber-white shadow-inner'
+                            : 'text-slate-muted hover:text-cyber-white'
+                        }`}
+                      >
+                        List View
+                      </button>
+                      <button
+                        onClick={() => setViewMode('map')}
+                        className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          viewMode === 'map'
+                            ? 'bg-slate-900 border border-slate-800 text-cyber-white shadow-inner'
+                            : 'text-slate-muted hover:text-cyber-white'
+                        }`}
+                      >
+                        Map View
+                      </button>
+                    </div>
+
+                    {(searchQuery || selectedDomain || localOnly || isAiMode) && (
+                      <button
+                        onClick={handleClearFilters}
+                        className="py-1 px-3 rounded-lg bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-muted text-xs font-bold cursor-pointer transition-all flex items-center gap-1.5"
+                      >
+                        Clear Filters
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {error && (
@@ -701,6 +791,11 @@ export default function Browse() {
                       Exit AI Matchmaker
                     </button>
                   </div>
+                ) : viewMode === 'map' ? (
+                  <MentorMap
+                    mentors={isAiMode ? aiMatches : mentors}
+                    studentCity={student?.city}
+                  />
                 ) : isAiMode ? (
                   // AI matches split: Hero vs Grid
                   <div className="space-y-6">
@@ -764,6 +859,84 @@ export default function Browse() {
         </div>
 
       </main>
+
+      {showBrowseReviewModal && selectedMentorForReview && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-6 animate-stagger-fade">
+          <div className="bg-[#0D0D11] border border-white/8 p-6 rounded-3xl w-full max-w-md space-y-6 shadow-2xl relative">
+            <button 
+              onClick={() => {
+                setShowBrowseReviewModal(false);
+                setSelectedMentorForReview(null);
+              }}
+              className="absolute top-4 right-4 text-slate-dark hover:text-cyber-white text-base border-0 bg-transparent cursor-pointer font-bold"
+            >
+              ✕
+            </button>
+
+            <div className="space-y-1">
+              <span className="text-[9px] font-black text-glow-violet uppercase tracking-widest block">FEEDBACK FORM</span>
+              <h3 className="text-lg font-black text-cyber-white">Rate {selectedMentorForReview.name}</h3>
+              <p className="text-[10px] text-slate-muted">Share your thoughts on session coordination and technical support.</p>
+            </div>
+
+            <form onSubmit={handleBrowseReviewSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-muted uppercase block">Select Rating</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setBrowseReviewRating(star)}
+                      className="bg-transparent border-0 cursor-pointer p-0"
+                    >
+                      <svg 
+                        className={`w-6 h-6 ${star <= browseReviewRating ? 'text-amber-400 fill-amber-400' : 'text-slate-700 fill-slate-700'}`} 
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="browseReviewNote" className="text-[9px] font-black text-slate-muted uppercase block">Review Description</label>
+                <textarea
+                  id="browseReviewNote"
+                  required
+                  rows="3"
+                  value={browseReviewNote}
+                  onChange={(e) => setBrowseReviewNote(e.target.value)}
+                  placeholder="Describe how this mentor helped you..."
+                  className="w-full bg-[#050505] border border-white/8 text-cyber-white rounded-xl p-3 text-xs outline-none focus:border-white transition-all resize-none font-sans"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={browseReviewSubmitting}
+                  className="flex-1 py-3 px-4 rounded-xl bg-cyber-white text-black font-extrabold text-xs shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  {browseReviewSubmitting ? 'Submitting...' : 'Submit Review'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowBrowseReviewModal(false);
+                    setSelectedMentorForReview(null);
+                  }}
+                  className="flex-1 py-3 px-4 rounded-xl bg-slate-900 border border-white/8 text-cyber-white font-bold text-xs cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

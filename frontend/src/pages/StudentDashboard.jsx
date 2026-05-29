@@ -40,34 +40,50 @@ export default function StudentDashboard() {
     const initDashboard = async () => {
       setLoading(true);
       
-      // Load student details
-      const studentDetails = localStorage.getItem('studentDetails');
-      if (studentDetails) {
-        try {
-          const parsed = JSON.parse(studentDetails);
-          const defaultDetails = {
-            name: parsed.name || 'Student Name',
-            city: parsed.city || 'Hyderabad',
-            focusArea: parsed.focusArea || 'Advanced Systems',
-            learntSoFar: parsed.learntSoFar || 'React hooks, basic Python, SQL foundations',
-            achievements: parsed.achievements || 'Co-built student directory, solved 50+ LeetCode milestones',
-            nextTarget: parsed.nextTarget || 'Vite & Tailwind v4 production compilation'
-          };
-          setStudent(defaultDetails);
-          setEditForm(defaultDetails);
-        } catch (e) {
-          console.error(e);
+      let targetCity = 'Hyderabad';
+      let studentData = null;
+      try {
+        const userRes = await client.get('/auth/me');
+        const user = userRes.data;
+        studentData = {
+          name: user.name || 'Student Name',
+          city: user.city || 'Hyderabad',
+          focusArea: user.focus_area || 'Advanced Systems',
+          learntSoFar: user.learnt_so_far || 'React hooks, basic Python, SQL foundations',
+          achievements: user.achievements || 'Co-built student directory, solved 50+ LeetCode milestones',
+          nextTarget: user.next_target || 'Vite & Tailwind v4 production compilation'
+        };
+        targetCity = user.city || 'Hyderabad';
+        setStudent(studentData);
+        setEditForm(studentData);
+        localStorage.setItem('studentDetails', JSON.stringify(studentData));
+      } catch (err) {
+        console.error("Failed to load student info from backend:", err);
+        // Fallback to localStorage if offline/error
+        const studentDetails = localStorage.getItem('studentDetails');
+        if (studentDetails) {
+          try {
+            const parsed = JSON.parse(studentDetails);
+            studentData = {
+              name: parsed.name || 'Student Name',
+              city: parsed.city || 'Hyderabad',
+              focusArea: parsed.focusArea || 'Advanced Systems',
+              learntSoFar: parsed.learntSoFar || 'React hooks, basic Python, SQL foundations',
+              achievements: parsed.achievements || 'Co-built student directory, solved 50+ LeetCode milestones',
+              nextTarget: parsed.nextTarget || 'Vite & Tailwind v4 production compilation'
+            };
+            targetCity = parsed.city || 'Hyderabad';
+            setStudent(studentData);
+            setEditForm(studentData);
+          } catch (e) {
+            console.error(e);
+          }
         }
       }
 
       // Fetch all mentors to find local ones
       try {
         const res = await client.get('/mentors');
-        // Parse city from current student
-        let targetCity = 'Hyderabad';
-        if (studentDetails) {
-          targetCity = JSON.parse(studentDetails).city || 'Hyderabad';
-        }
         
         // Filter mentors in the same city
         const local = res.data.filter(
@@ -128,11 +144,35 @@ export default function StudentDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleProfileSave = (e) => {
+  const handleProfileSave = async (e) => {
     e.preventDefault();
-    setStudent(editForm);
-    localStorage.setItem('studentDetails', JSON.stringify(editForm));
-    setIsEditingProfile(false);
+    try {
+      const payload = {
+        name: editForm.name,
+        city: editForm.city,
+        focus_area: editForm.focusArea,
+        learnt_so_far: editForm.learntSoFar,
+        achievements: editForm.achievements,
+        next_target: editForm.nextTarget
+      };
+      const res = await client.put('/auth/me', payload);
+      const user = res.data;
+      const updatedData = {
+        name: user.name || 'Student Name',
+        city: user.city || 'Hyderabad',
+        focusArea: user.focus_area || 'Advanced Systems',
+        learntSoFar: user.learnt_so_far || 'React hooks, basic Python, SQL foundations',
+        achievements: user.achievements || 'Co-built student directory, solved 50+ LeetCode milestones',
+        nextTarget: user.next_target || 'Vite & Tailwind v4 production compilation'
+      };
+      setStudent(updatedData);
+      setEditForm(updatedData);
+      localStorage.setItem('studentDetails', JSON.stringify(updatedData));
+      setIsEditingProfile(false);
+    } catch (err) {
+      console.error("Failed to save student profile coordinates:", err);
+      alert("Failed to save profile. Please verify your connection.");
+    }
   };
 
   const recenterMapOnSelf = () => {
@@ -182,8 +222,12 @@ export default function StudentDashboard() {
               {!isEditingProfile ? (
                 <>
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-glow-violet to-glow-blue flex items-center justify-center text-cyber-white font-extrabold text-lg shadow-md shrink-0">
-                      {student.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                    <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-white/10 shadow-md bg-slate-900 flex items-center justify-center">
+                      <img 
+                        src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(student.name || 'Student')}`} 
+                        alt={student.name} 
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-sm font-extrabold text-cyber-white truncate">{student.name}</h3>
