@@ -1,16 +1,104 @@
 # MentorMesh
 
-MentorMesh is a locality-first, AI-powered mentor matching platform that helps students discover and connect with working professionals and researchers in their city.
+> **Locality-first AI mentor matching for students — no cold DMs, no wasted connections.**
 
-Instead of sending cold, generic outreach messages, students submit a structured intent form describing their goals, prior efforts, and specific mentorship needs. MentorMesh then uses AI-ranked matching to recommend the most relevant mentors and facilitate direct, context-aware connections.
+MentorMesh connects college students with working professionals and researchers in their own city. An AI engine ranks mentor relevance against the student's stated goal, and no message reaches a mentor until the student answers three specific intent questions. The result: every connection starts with context, not noise.
 
 ---
 
-## System Architecture
+## Table of Contents
+
+- [The Problem](#the-problem)
+- [The Solution](#the-solution)
+- [Feature Overview](#feature-overview)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Database Schema](#database-schema)
+- [API Reference](#api-reference)
+- [AI Match Engine](#ai-match-engine)
+- [Project Structure](#project-structure)
+- [Local Setup](#local-setup)
+- [Environment Variables](#environment-variables)
+- [Deployment](#deployment)
+- [Roadmap](#roadmap)
+- [Author](#author)
+
+---
+
+## The Problem
+
+Students who want real-world guidance face the same broken loop: find someone impressive on LinkedIn, send a cold connection request, write a vague "I'd love to connect" message, and wait to be ignored. The professional has no idea what the student actually wants. The student has no way to stand out. Nobody wins.
+
+Three specific problems drive this:
+
+**Geographic mismatch.** Most mentor-matching platforms are global by default. But for a student in Hyderabad, a mentor in the same city means the possibility of meeting in person, attending the same events, and building a relationship that isn't purely transactional.
+
+**Intent mismatch.** A mentor with 30 years of experience in cloud infrastructure cannot help every student who vaguely wants to "learn tech." Without knowing what the student has already tried, what they specifically want to achieve, and what they are asking for in the very first session, the mentor cannot evaluate whether their time is well spent.
+
+**No filtering layer.** LinkedIn and Twitter have no mechanism that forces a student to qualify their request before sending it. MentorMesh does.
+
+---
+
+## The Solution
+
+MentorMesh is a structured, locality-first matching platform with three core design decisions baked into the product:
+
+**City-first discovery.** Students search mentors by city and domain. The default view shows professionals in the same metropolitan area, making in-person collaboration a realistic option rather than an afterthought.
+
+**AI-powered ranking.** When a student enters their goal in plain language — "I want to publish a research paper on ML fairness before graduating" — the system sends that goal and all local mentor profiles to Claude. The AI returns a ranked list with a specific match score and a one-sentence reason per mentor. Students see *why* each match is relevant, not just a list of names.
+
+**Intent-gated connection requests.** Before any message reaches a mentor, the student must answer three non-skippable questions:
+1. What specifically do you want to learn or achieve?
+2. What have you already tried or explored on your own?
+3. What is your concrete ask for the first session?
+
+The mentor sees all three answers before deciding to accept or decline. This single mechanism eliminates low-effort outreach entirely.
+
+---
+
+## Feature Overview
+
+| Feature | Description |
+|---|---|
+| Student & Mentor Registration | Role-based accounts with city tracking |
+| JWT Authentication | Secure login with 7-day token expiry |
+| Mentor Profile Management | Domains, bio, capacity limits, discussion topics, and availability state |
+| City + Domain Search | Filter mentors by location and expertise area |
+| AI Match Engine | Claude ranks mentors by relevance to a student's goal with match scores (gated $\ge 60\%$) and reasons |
+| Interactive Dark Map | Leaflet map with city pins showing geolocated guides on home and search dashboards |
+| Intent-Gated Requests | 3-question form required before any connection request is sent |
+| Mentor Inbox | Mentors review full student answers before accepting or declining |
+| Workspace Chat | Real-time workspace chat with custom simulated AI replies from mentors |
+| Ratings & Reviews | Students rate (1-5 stars) and review completed sessions; mentor rating updates in real-time |
+| Dicebear Avatars | Snapchat-style adventurer icons replacing standard initials circles |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Backend | FastAPI (Python 3.11+) |
+| Database ORM | SQLAlchemy |
+| Database (Local) | SQLite |
+| Database (Production) | PostgreSQL |
+| Authentication | JWT via `python-jose` + direct `bcrypt` hashing |
+| AI Engine | Anthropic Claude API (`claude-sonnet-4-20250514`) |
+| Frontend | React 19 + Vite |
+| Styling | Tailwind CSS v4 |
+| HTTP Client | Axios |
+| Map Library | Leaflet.js |
+| Avatars | Dicebear Adventurer API |
+| Backend Deployment | Render |
+| Frontend Deployment | Vercel |
+
+---
+
+## Architecture
 
 ```mermaid
 graph TD
-    subgraph Frontend [Client - React 19 & Tailwind CSS v4]
+    subgraph Frontend [React 19 & Tailwind CSS v4]
         UI[Browse / Match Dashboard]
         Map[Interactive Leaflet Dark Map]
         Chat[Workspace Chat - Blur-Free]
@@ -18,7 +106,7 @@ graph TD
         Avatars[Dicebear Adventurer Avatars]
     end
 
-    subgraph Backend [REST API - FastAPI & SQLAlchemy]
+    subgraph Backend [FastAPI & SQLAlchemy]
         AuthRouter[Auth Router / JWT Authentication]
         MentorRouter[Mentor Profiles & Match Router]
         RequestRouter[Connection & Reviews Router]
@@ -45,203 +133,372 @@ graph TD
     RequestRouter -->|Store requests & updates| DB
 ```
 
----
-
-## Core Features
-
-*   **AI Mentor Matching Gating**: Students describe their next target milestones. The match service queries Claude API to evaluate compatibility, returns a tailored Match Score and Match Reason, and gates matches so only mentors with a score of $\ge 60\%$ are recommended to eliminate low-quality pairings.
-*   **Locality-First Live Map**: Integrated an interactive CartoDB dark-themed map on the Welcome landing page and search layouts. Automatically maps guides based on user city coordinates, utilizing spiral layout jitter to prevent overlapping pins.
-*   **Intent-Gated Requests**: To eliminate spam, students must answer three intent questions:
-    1. *What specifically do you want to learn or achieve?*
-    2. *What have you already tried or explored on your own?*
-    3. *What is your concrete ask for the first session?*
-*   **Context-Aware Workspace Chat**: A blur-free real-time chat interface. Includes a simulated backend responder that generates personalized, context-aware replies based on the mentor's actual bio, domains, and professional profile details.
-*   **Runtime Ratings & Reviews**: Students can submit 1–5 star ratings and reviews upon completing sessions. Average ratings and session counts are dynamically calculated and updated in real-time.
-*   **Dicebear Adventurer Avatars**: Replaced flat text initials with Snapchat-style graphical avatars powered by the Dicebear Adventurer API (`https://api.dicebear.com/7.x/adventurer/svg`), adding a colorful, custom feel to both student and mentor layouts.
-*   **On-Demand Availability Controls**: Mentors can configure their status toggles (`available`, `limited`, `busy`, `offline`) directly inside their dashboard settings.
-
----
-
-## Technology Stack
-
-*   **Frontend**: React 19, Tailwind CSS v4, Axios, Leaflet.js, React-Router-DOM (v7).
-*   **Backend**: FastAPI, SQLAlchemy ORM, Uvicorn, Python-Jose (JWT), Cryptography.
-*   **Database**: PostgreSQL (Production) / SQLite (Local development).
-*   **AI Engine**: Anthropic Claude (`claude-sonnet-4-20250514`).
-*   **Avatars**: Dicebear Adventurer API.
+The frontend communicates exclusively through the REST API. The Axios client (`client.js`) attaches the JWT from `localStorage` on every request and redirects to `/login` on a `401` response. The backend validates tokens, queries the database, and calls the Claude API only for the `/mentors/match` endpoint to keep costs minimal.
 
 ---
 
 ## Database Schema
 
-```
-Users
- ├── id (PK, Integer)
- ├── name (String, Not Null)
- ├── email (String, Unique, Index, Not Null)
- ├── password_hash (String, Not Null)
- ├── role (String, Index, Not Null)  -- 'student' or 'mentor'
- ├── city (String, Index, Not Null)
- ├── avatar_url / avatar_gradient (String, Nullable)
- ├── focus_area / learnt_so_far / achievements / next_target (String, Nullable)
- └── created_at (DateTime)
+### `users`
+| Column | Type | Notes |
+|---|---|---|
+| id | Integer | Primary key |
+| name | String | |
+| email | String | Unique |
+| password_hash | String | bcrypt |
+| role | String | `student` or `mentor` |
+| city | String | Used for locality matching |
+| focus_area | String | Student target learnings field |
+| learnt_so_far | String | Student skill progress field |
+| achievements | String | Student target achievements |
+| next_target | String | Student milestone target |
+| created_at | DateTime | |
 
-Mentor Profiles
- ├── id (PK, Integer)
- ├── user_id (FK -> Users.id, Cascade, Unique)
- ├── domains (JSON Array, Not Null)  -- e.g. ["AI/ML", "Web Dev"]
- ├── bio / what_ill_discuss (String, Nullable)
- ├── max_sessions_per_month (Integer, Default: 4)
- ├── avg_rating (Float, Default: 0.0)
- ├── session_count (Integer, Default: 0)
- └── availability_state (String, Default: 'available')
+### `mentor_profiles`
+| Column | Type | Notes |
+|---|---|---|
+| id | Integer | Primary key |
+| user_id | Integer | FK → users (CASCADE) |
+| domains | JSON | Array of strings e.g. `["AI/ML", "Web Dev"]` |
+| bio | String | |
+| max_sessions_per_month | Integer | Default 4 |
+| what_ill_discuss | String | |
+| avg_rating | Float | Default 0.0, updated on review |
+| session_count | Integer | Default 0 |
+| availability_state | String | `available`, `limited`, `busy`, `offline` |
 
-Connection Requests
- ├── id (PK, Integer)
- ├── student_id (FK -> Users.id, Cascade)
- ├── mentor_id (FK -> Users.id, Cascade)
- ├── answer_1 / answer_2 / answer_3 (String, Not Null)
- ├── status (String, Default: 'pending')  -- pending, accepted, declined
- └── created_at / updated_at (DateTime)
+### `connection_requests`
+| Column | Type | Notes |
+|---|---|---|
+| id | Integer | Primary key |
+| student_id | Integer | FK → users (CASCADE) |
+| mentor_id | Integer | FK → users (CASCADE) |
+| answer_1 | String | What do you want to learn or achieve? |
+| answer_2 | String | What have you already tried? |
+| answer_3 | String | Concrete ask for the first session |
+| status | String | `pending`, `accepted`, `declined` |
+| created_at | DateTime | |
 
-Sessions
- ├── id (PK, Integer)
- ├── request_id (FK -> Connection Requests.id, Cascade)
- ├── student_id (FK -> Users.id)
- ├── mentor_id (FK -> Users.id)
- ├── scheduled_at (DateTime)
- ├── agenda (String)
- └── status (String, Default: 'upcoming')  -- upcoming, completed
+### `sessions`
+| Column | Type | Notes |
+|---|---|---|
+| id | Integer | Primary key |
+| request_id | Integer | FK → connection_requests (CASCADE) |
+| student_id | Integer | FK → users (CASCADE) |
+| mentor_id | Integer | FK → users (CASCADE) |
+| scheduled_at | DateTime | |
+| agenda | String | Pre-filled from request answers |
+| status | String | `upcoming`, `completed` |
 
-Reviews
- ├── id (PK, Integer)
- ├── session_id (FK -> Sessions.id, Cascade)
- ├── rating (Integer)  -- 1 to 5
- ├── note (String)
- └── created_at (DateTime)
+### `reviews`
+| Column | Type | Notes |
+|---|---|---|
+| id | Integer | Primary key |
+| session_id | Integer | FK → sessions (CASCADE) |
+| rating | Integer | 1–5 |
+| note | String | Optional written review |
+| created_at | DateTime | |
 
-Mentorship Connections
- ├── id (PK, Integer)
- ├── student_id (FK -> Users.id)
- ├── mentor_id (FK -> Users.id)
- ├── created_from_request_id (FK -> Connection Requests.id)
- ├── status (String, Default: 'active')  -- active, paused, completed
- └── created_at (DateTime)
-```
+All foreign keys use `ondelete="CASCADE"` — deleting a user removes all their associated records cleanly.
 
 ---
 
-## API Endpoints
+## API Reference
 
-### Authentication
-*   `POST /auth/register` - Create student or mentor accounts.
-*   `POST /auth/login` - Obtain JWT bearer access token.
-*   `GET /auth/me` - Fetch authenticated user details.
-*   `PUT /auth/me` - Update profile parameters.
+### Auth
 
-### Mentor Profiles & Match
-*   `GET /mentors` - Get public mentors directory.
-*   `GET /mentors/me` - Retrieve current mentor profile.
-*   `PUT /mentors/me` - Upsert mentor profile variables (availability, domains, bio).
-*   `GET /mentors/{user_id}` - Retrieve detailed mentor profile with dynamically loaded stats and reviews.
-*   `POST /mentors/match` - AI-ranked recommendations list (gated $\ge 60\%$).
-*   `GET /mentors/match-score` - Fallback route to compute compatibility score.
-*   `POST /mentors/chat-reply` - Generates a simulated, context-aware mentor response.
-*   `POST /mentors/{mentor_id}/reviews` - Submit review notes and rating stars.
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| POST | `/auth/register` | Register new student or mentor | No |
+| POST | `/auth/login` | Login and receive JWT | No |
+| GET | `/auth/me` | Retrieve authenticated user profile info | Yes |
+| PUT | `/auth/me` | Update student profile metadata | Yes |
+
+**Register payload:**
+```json
+{
+  "name": "Harsha Vardhan",
+  "email": "harsha@ace.edu",
+  "password": "securepass123",
+  "role": "student",
+  "city": "Hyderabad"
+}
+```
+
+**Login response:**
+```json
+{
+  "access_token": "<jwt>",
+  "token_type": "bearer"
+}
+```
+
+### Mentors
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| PUT | `/mentors/me` | Upsert mentor profile variables | Yes (mentor) |
+| GET | `/mentors` | Fetch all public profiles | No |
+| POST | `/mentors/match` | AI-ranked mentor list for a student goal | Yes (student) |
+| POST | `/mentors/chat-reply` | Simulated context-aware chat responder | Yes |
+| POST | `/mentors/{mentor_id}/reviews` | Leave review note and rating stars | Yes (student) |
+
+**Match payload:**
+```json
+{
+  "goal_text": "I want to publish a research paper on ML fairness",
+  "city": "Hyderabad"
+}
+```
 
 ### Connection Requests
-*   `POST /requests` - Send a structured connection request.
-*   `GET /requests/sent` - Get student's sent requests.
-*   `GET /requests/received` - Get mentor's incoming requests.
-*   `PATCH /requests/{request_id}` - Update status (accept/decline request).
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| POST | `/requests` | Submit intent form + connection request | Yes (student) |
+| PATCH | `/requests/{id}` | Accept or decline a request | Yes (mentor) |
+
+### Sessions
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| POST | `/sessions` | Schedule a session from accepted request | Yes (mentor) |
+| POST | `/sessions/{id}/review` | Submit a review for a completed session | Yes (student) |
 
 ---
 
-## Local Development
+## AI Match Engine
 
-### 1. Backend Setup
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-2. Set up a Python virtual environment and activate it:
-   ```bash
-   python -m venv venv
-   # On Windows:
-   venv\Scripts\activate
-   # On macOS/Linux:
-   source venv/bin/activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Create a `.env` file in the root folder with the following variables:
-   ```env
-   JWT_SECRET=your_jwt_secret_key
-   ANTHROPIC_API_KEY=your_claude_api_key
-   OPENAI_API_KEY=your_openai_api_key
-   DATABASE_URL=sqlite:///./mentormesh.db
-   ```
-5. Seed initial realistic test data (includes 15 mentors and 5 student profiles):
-   ```bash
-   python -m backend.seed --force
-   ```
-6. Start the uvicorn development server:
-   ```bash
-   uvicorn main:app --reload --port 8000
-   ```
-   *   **API Base**: `http://localhost:8000`
-   *   **Swagger Docs**: `http://localhost:8000/docs`
+The matching logic lives in `backend/services/match.py` and is invoked only by `POST /mentors/match`.
 
-### 2. Frontend Setup
-1. Navigate to the frontend directory:
-   ```bash
-   cd ../frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Create a `.env` file inside the `frontend` directory:
-   ```env
-   VITE_API_BASE_URL=http://localhost:8000
-   ```
-4. Run the Vite development server:
-   ```bash
-   npm run dev
-   ```
-   *   **Local UI URL**: `http://localhost:5173`
+**Flow:**
+1. Query all mentor profiles where `city` matches the student's city
+2. Serialize the profiles to a compact JSON representation
+3. Send a structured prompt to `claude-sonnet-4-20250514` with the student's goal and the mentor list
+4. Parse the returned JSON array
+5. Filter rankings to return only highly compatible mentors (score $\ge 60\%$)
+
+**Prompt structure:**
+```
+You are a mentor matching engine. Given a student's goal and a list of mentor
+profiles, return a JSON array ranked by relevance. Each item must include:
+mentor_id, match_score (0–100), match_reason (one sentence, specific, not generic).
+
+Student goal: {goal_text}
+Mentors: {mentor_profiles_json}
+
+Return only valid JSON. No other text.
+```
+
+The frontend renders each result with the `match_reason` displayed as a badge beneath the mentor's name, giving students a specific explanation for every ranking position rather than an opaque score.
 
 ---
 
-## Deployment Configuration
+## Project Structure
 
-### Frontend (Vercel)
-To deploy the React SPA, connect your repository to Vercel and configure the settings as follows:
-*   **Root Directory**: `frontend`
-*   **Framework Preset**: `Vite` (automatically detected)
-*   **Build Command**: `npm run build`
-*   **Output Directory**: `dist`
-*   **Environment Variables**:
-    *   `VITE_API_BASE_URL`: `https://your-backend-railway-url.railway.app`
+```
+mentormesh/
+├── backend/
+│   ├── main.py              # FastAPI app, CORS, router registration
+│   ├── database.py          # SQLAlchemy engine, session factory, get_db
+│   ├── models.py            # table models
+│   ├── schemas.py           # Pydantic request/response schemas
+│   ├── auth.py              # Password hashing, JWT creation, get_current_user
+│   ├── seed.py              # Demo data seeding script
+│   ├── routers/
+│   │   ├── auth.py          # POST /auth/register, POST /auth/login
+│   │   ├── mentors.py       # Mentor profile CRUD + reviews + simulated chat
+│   │   ├── requests.py      # Connection request creation + status updates
+│   │   └── sessions.py      # Session scheduling + review submission
+│   └── services/
+│       └── match.py         # Claude API integration for mentor ranking
+├── frontend/
+│   ├── src/
+│   │   ├── pages/
+│   │   │   ├── Login.jsx
+│   │   │   ├── Register.jsx
+│   │   │   ├── StudentDashboard.jsx
+│   │   │   ├── MentorDashboard.jsx
+│   │   │   ├── Browse.jsx
+│   │   │   └── MentorProfile.jsx
+│   │   ├── components/
+│   │   │   ├── MentorCard.jsx
+│   │   │   ├── MentorMap.jsx    # Leaflet dark map with city pins
+│   │   │   ├── IntentForm.jsx
+│   │   │   ├── SessionCard.jsx
+│   │   │   └── MatchResult.jsx
+│   │   └── api/
+│   │       └── client.js    # Axios instance with JWT interceptor
+│   ├── index.css            # Tailwind v4 + custom design tokens
+│   └── index.html
+└── README.md
+```
 
-### Backend (Railway)
-To deploy the FastAPI server on Railway:
-*   Set the **Root Directory** of your Railway service to `backend`.
-*   Ensure the **Start Command** is configured to run the uvicorn service:
-    ```bash
-    uvicorn main:app --host 0.0.0.0 --port $PORT
-    ```
-*   **Environment Variables**:
-    *   `DATABASE_URL`: provision a PostgreSQL database on Railway; the connection string will be automatically linked and formatted inside [database.py](file:///e:/MentorMesh/backend/database.py).
-    *   `JWT_SECRET`: your JWT secret key.
-    *   `ANTHROPIC_API_KEY`: your Anthropic API Key.
+---
+
+## Local Setup
+
+### Prerequisites
+
+- Python 3.11+
+- Node.js 18+
+- Git
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/your-username/mentormesh.git
+cd mentormesh
+```
+
+### 2. Backend setup
+
+```bash
+# Create and activate virtual environment
+python -m venv venv
+
+# Windows (PowerShell)
+.\venv\Scripts\Activate.ps1
+
+# macOS / Linux
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### 3. Configure environment variables
+
+Create a `.env` file in the root directory (see [Environment Variables](#environment-variables) section below).
+
+### 4. Run the backend
+
+```bash
+uvicorn backend.main:app --reload
+```
+
+The API will be available at `http://localhost:8000`.  
+Interactive Swagger docs: `http://localhost:8000/docs`
+
+### 5. Seed demo data (optional)
+
+```bash
+python -m backend.seed --force
+```
+
+This populates the database with 15 mentor profiles and 5 student accounts for testing.
+
+### 6. Frontend setup
+
+```bash
+cd frontend
+npm install
+```
+
+Create a `.env` file in the `frontend/` directory:
+
+```
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+### 7. Run the frontend
+
+```bash
+npm run dev
+```
+
+The app will be available at `http://localhost:5173`.
+
+### Testing via PowerShell
+
+**Register a student:**
+```powershell
+$body = @{
+    name = "Harsha Vardhan"
+    email = "harsha@ace.edu"
+    password = "securepassword123"
+    role = "student"
+    city = "Hyderabad"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Method Post -Uri "http://localhost:8000/auth/register" `
+  -ContentType "application/json" -Body $body
+```
+
+**Login and retrieve token:**
+```powershell
+$login = @{ email = "harsha@ace.edu"; password = "securepassword123" } | ConvertTo-Json
+$token = (Invoke-RestMethod -Method Post -Uri "http://localhost:8000/auth/login" `
+  -ContentType "application/json" -Body $login).access_token
+```
+
+---
+
+## Environment Variables
+
+### Backend (`.env`)
+
+| Variable | Required | Description |
+|---|---|---|
+| `JWT_SECRET` | Yes (production) | Secret key for signing JWTs. Use a long random string in production. Defaults to a hardcoded dev key locally — **never deploy without setting this**. |
+| `DATABASE_URL` | No (local) | PostgreSQL connection string for production. Defaults to `sqlite:///./mentormesh.db` locally. Format: `postgresql://user:password@host:port/dbname` |
+| `ANTHROPIC_API_KEY` | Yes | Your Anthropic API key for the Claude match engine. Get one at [console.anthropic.com](https://console.anthropic.com). |
+
+### Frontend (`frontend/.env`)
+
+| Variable | Required | Description |
+|---|---|---|
+| `VITE_API_BASE_URL` | Yes | Base URL of the backend API. `http://localhost:8000` locally, your Render URL in production. |
+
+---
+
+## Deployment
+
+### Backend on Render
+
+1. Push your code to GitHub.
+2. Create a new **Web Service** on [render.com](https://render.com) pointing to your repo.
+3. Set the following:
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
+4. Add a **PostgreSQL** database on Render and copy the connection string.
+5. Set all environment variables in the Render dashboard (`JWT_SECRET`, `DATABASE_URL`, `ANTHROPIC_API_KEY`, `PYTHON_VERSION`).
+
+### Frontend on Vercel
+
+1. Import your GitHub repo into [vercel.com](https://vercel.com).
+2. Set the root directory to `frontend/`.
+3. Add environment variable: `VITE_API_BASE_URL=https://your-render-service.onrender.com`
+4. Deploy.
+
+Vercel automatically rebuilds on every push to `main`.
+
+---
+
+## Roadmap
+
+**V2 — Quality of life**
+- AI Goal Refinement: Claude rewrites the student's rough goal into a structured, specific version before running the match
+- Mentor verification badge for trusted profiles
+
+**V3 — Discovery**
+- Personalized discovery feed on the student dashboard, ranked by AI match score against a saved goal
+- Domain-based trending mentors surfaced weekly
+
+**V4 — Trust signals**
+- Response time tracking per mentor
+- Session completion rate badge
+- Student endorsements visible on mentor profile
 
 ---
 
 ## Author
 
-*   **Anirudh**
-    *   ACE Engineering College
-    *   Research Contributor – Quantum Random Number Generation
+**ALIMINETI ANIRUDH**  
+Student · ACE Engineering College, Hyderabad
+
+Built for a 7-day hackathon. Stack: FastAPI · React · OPENAI And Codex · PostgreSQL · Render · Vercel.
+
+---
+
+*MentorMesh — structured intent, local connections, zero cold DMs.*
