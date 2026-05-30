@@ -15,15 +15,20 @@ import Conversation from './pages/Conversation';
 const ProtectedRoute = ({ children, allowedRole }) => {
   const token = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');
-  
+
   if (!token || !userStr) {
     return <Navigate to="/login" replace />;
   }
 
-  const user = JSON.parse(userStr);
-  if (allowedRole && user.role !== allowedRole) {
-    // Redirect users to their respective dashboards if they try to access a route of another role
-    return <Navigate to={user.role === 'mentor' ? '/mentor-dashboard' : '/browse'} replace />;
+  let user;
+  try {
+    user = JSON.parse(userStr);
+  } catch {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!user?.role || (allowedRole && user.role !== allowedRole)) {
+    return <Navigate to={user?.role === 'mentor' ? '/mentor-dashboard' : '/browse'} replace />;
   }
 
   return children;

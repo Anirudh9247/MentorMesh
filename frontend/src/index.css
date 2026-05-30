@@ -73,7 +73,10 @@ body {
   margin: 0;
 }
 
-/* Premium Scrollbar */
+/* Premium Scrollbar
+   WebKit-only scrollbar styling: Firefox and other non-WebKit browsers will render native scrollbars.
+   If a cross-browser scrollbar experience is required, add a custom scrollbar library or normalize styling in the application.
+*/
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

@@ -82,15 +82,29 @@ export default function Login() {
       const { access_token } = response.data;
       
       localStorage.setItem('token', access_token);
-      
+
       const tokenPayload = access_token.split('.')[1];
-      const decodedPayload = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
-      
-      const user = {
-        email: decodedPayload.sub,
-        role: decodedPayload.role,
-      };
-      
+      let decodedPayload;
+      let user;
+
+      try {
+        decodedPayload = JSON.parse(atob(tokenPayload.replace(/-/g, '+').replace(/_/g, '/')));
+        user = {
+          email: decodedPayload.sub,
+          role: decodedPayload.role,
+        };
+
+        if (!user.email || !user.role) {
+          throw new Error('Invalid token payload');
+        }
+      } catch (decodeError) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setSubmitError('Unable to parse authentication token. Please try again.');
+        setLoading(false);
+        return;
+      }
+
       localStorage.setItem('user', JSON.stringify(user));
 
       if (user.role === 'mentor') {

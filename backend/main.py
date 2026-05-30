@@ -42,7 +42,7 @@ app.include_router(mentors.router)
 app.include_router(requests.router)
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def read_root():
     """
     Base health-check endpoint for Render / developer health verification.
