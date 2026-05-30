@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { FlipCard } from './animate-ui/FlipCard';
 
-export default function MentorCard({ mentor, studentCity, isTopMatch = false }) {
+function MentorCard({ mentor, studentCity, isTopMatch = false }) {
   // Check if this card represents an AI match result
   const isAiMatched = mentor?.score !== undefined;
   const mentorProfile = isAiMatched ? mentor.mentor_data : mentor;
@@ -379,4 +379,6 @@ export default function MentorCard({ mentor, studentCity, isTopMatch = false }) 
     </div>
   );
 }
+
+export default memo(MentorCard);
 
