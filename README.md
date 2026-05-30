@@ -205,7 +205,7 @@ Mentorship Connections
    ```
 3. Create a `.env` file inside the `frontend` directory:
    ```env
-   VITE_API_URL=http://localhost:8000
+   VITE_API_BASE_URL=http://localhost:8000
    ```
 4. Run the Vite development server:
    ```bash
@@ -224,7 +224,7 @@ To deploy the React SPA, connect your repository to Vercel and configure the set
 *   **Build Command**: `npm run build`
 *   **Output Directory**: `dist`
 *   **Environment Variables**:
-    *   `VITE_API_URL`: `https://your-backend-railway-url.railway.app`
+    *   `VITE_API_BASE_URL`: `https://your-backend-railway-url.railway.app`
 
 ### Backend (Railway)
 To deploy the FastAPI server on Railway:
