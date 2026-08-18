@@ -19,14 +19,19 @@ app = FastAPI(
     version="1.0.0"
 )
 
+import os
+
 # Configure CORS Middleware
 # Allows our React frontend (running locally on port 5173 or deployed on Vercel)
 # to communicate with the FastAPI backend.
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "*"  # Wildcard allowed for hackathon/deployment ease, can be locked down in production
 ]
+
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    origins.extend([url.strip() for url in frontend_url.split(",") if url.strip()])
 
 app.add_middleware(
     CORSMiddleware,
