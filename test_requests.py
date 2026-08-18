@@ -1,8 +1,10 @@
 import os
 from datetime import datetime
+import tempfile
 
-# Set environment variable to use a test database
-os.environ["DATABASE_URL"] = "sqlite:///./test.db"
+db_fd, db_path = tempfile.mkstemp(suffix=".db")
+os.close(db_fd)
+os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
 
 from backend.database import engine, Base, SessionLocal
 from backend.main import app
@@ -12,17 +14,10 @@ from fastapi.testclient import TestClient
 client = TestClient(app)
 
 def setup_db():
-    # Re-create all tables
-    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
 
 def teardown_db():
     Base.metadata.drop_all(bind=engine)
-    if os.path.exists("./test.db"):
-        try:
-            os.remove("./test.db")
-        except PermissionError:
-            pass
 
 def create_user(db, name, email, role, city):
     from backend.auth import get_password_hash
@@ -143,5 +138,3 @@ def test_connection_requests():
     finally:
         teardown_db()
 
-if __name__ == "__main__":
-    test_connection_requests()
