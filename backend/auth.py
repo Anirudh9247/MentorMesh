@@ -15,7 +15,7 @@ from .schemas import TokenData
 # In production (Render), these MUST be set via environment variables.
 SECRET_KEY = os.getenv("JWT_SECRET", "mentormesh_local_super_secret_key_1234567890_change_me")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days expiration for convenience in a hackathon demo
+ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 30 minutes expiration for production
 
 # OAuth2 scheme configures FastAPI to read Bearer tokens from the Authorization header
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
@@ -47,7 +47,7 @@ def get_password_hash(password: str) -> str:
 def create_access_token(data: dict, expires_delta: Optional[datetime.timedelta] = None) -> str:
     """
     Generates a secure JWT access token containing custom data claims.
-    By default, sets an expiration of 7 days if no delta is provided.
+    By default, sets an expiration of 30 minutes if no delta is provided.
     """
     to_encode = data.copy()
     if expires_delta:
