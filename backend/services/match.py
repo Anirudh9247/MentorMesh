@@ -43,6 +43,7 @@ def offline_match_fallback(student_goals: str, student_city: str, mentors: List[
   ranked_mentors = []
   
   goals_lower = student_goals.lower()
+  goals_words = goals_lower.split()
   student_city_clean = student_city.strip().lower()
 
   for m in mentors:
@@ -68,8 +69,9 @@ def offline_match_fallback(student_goals: str, student_city: str, mentors: List[
               matched_domains.append(domain)
               
       # Boost score based on bio keyword matches
-      for word in goals_lower.split():
-          if len(word) > 4 and word in bio.lower():
+      bio_lower = bio.lower()
+      for word in goals_words:
+          if len(word) > 4 and word in bio_lower:
               score += 2
 
       # Cap score at 99
