@@ -98,10 +98,10 @@ export default function Browse() {
           learnt_so_far: currentUser.learnt_so_far || '',
           next_target: currentUser.next_target || ''
         };
-        localStorage.setItem('studentDetails', JSON.stringify(mappedDetails));
+        sessionStorage.setItem('studentDetails', JSON.stringify(mappedDetails));
       } catch (err) {
         console.error("Failed to load user info:", err);
-        const cachedUser = localStorage.getItem('user');
+        const cachedUser = sessionStorage.getItem('user');
         if (cachedUser) {
           currentUser = JSON.parse(cachedUser);
           setStudent(currentUser);
@@ -243,7 +243,7 @@ export default function Browse() {
       setAiLoading(false);
       setIsAiMode(true);
 
-      // Cache matches in localStorage for cold-start page reloads
+      // Cache matches in sessionStorage for cold-start page reloads
       const cacheObj = {};
       pendingMatches.forEach(match => {
         cacheObj[match.user_id] = {
@@ -251,7 +251,7 @@ export default function Browse() {
           reason: match.reason
         };
       });
-      localStorage.setItem('mentorMatchScores', JSON.stringify(cacheObj));
+      sessionStorage.setItem('mentorMatchScores', JSON.stringify(cacheObj));
     }
   }, [aiLoading, matchLoadingStep, apiDone, pendingMatches]);
 

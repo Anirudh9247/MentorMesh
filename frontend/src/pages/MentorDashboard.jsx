@@ -184,7 +184,10 @@ export default function MentorDashboard() {
   };
 
   const handleSignOut = () => {
-    localStorage.clear();
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('studentDetails');
+    sessionStorage.removeItem('mentorMatchScores');
     navigate('/');
   };
 

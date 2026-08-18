@@ -13,8 +13,8 @@ import Conversation from './pages/Conversation';
 
 // Route guard to restrict access by authentication and roles
 const ProtectedRoute = ({ children, allowedRole }) => {
-  const token = localStorage.getItem('token');
-  const userStr = localStorage.getItem('user');
+  const token = sessionStorage.getItem('token');
+  const userStr = sessionStorage.getItem('user');
 
   if (!token || !userStr) {
     return <Navigate to="/login" replace />;

@@ -12,8 +12,8 @@ export default function Welcome() {
   const [mapMentors, setMapMentors] = useState([]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
+    const token = sessionStorage.getItem('token');
+    const userStr = sessionStorage.getItem('user');
     if (token && userStr) {
       setIsLoggedIn(true);
       const user = JSON.parse(userStr);

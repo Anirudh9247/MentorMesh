@@ -10,14 +10,17 @@ export default function StudentHeader() {
   const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
-    const studentDetails = localStorage.getItem('studentDetails');
+    const studentDetails = sessionStorage.getItem('studentDetails');
     if (studentDetails) {
       setStudent(JSON.parse(studentDetails));
     }
   }, []);
 
   const handleSignOut = () => {
-    localStorage.clear();
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('studentDetails');
+    sessionStorage.removeItem('mentorMatchScores');
     navigate('/');
   };
 
