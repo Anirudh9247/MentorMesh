@@ -81,7 +81,7 @@ class MentorProfileRead(MentorProfileBase):
     session_count: int
     user: UserRead
     accepted_requests_count: int = 0
-    reviews: List[ReviewRead] = []
+    reviews: List['ReviewRead'] = []
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -172,6 +172,9 @@ class ReviewRead(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+MentorProfileRead.model_rebuild()
 
 
 # ==========================================
