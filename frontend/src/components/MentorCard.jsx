@@ -88,8 +88,11 @@ function MentorCard({ mentor, studentCity, isTopMatch = false }) {
   };
 
   const userIdSeed = user?.id || 1;
-  const replyTime = userIdSeed % 3 === 0 ? 'Replies in <1 hr' : userIdSeed % 3 === 1 ? 'Replies in <2 hrs' : 'Replies in <4 hrs';
-  const mentorStyle = userIdSeed % 3 === 0 ? '🎯 Practical projects' : userIdSeed % 3 === 1 ? '💡 Career strategy' : '📖 Theory & research';
+  const seedIndex = userIdSeed % 3;
+  const replyTimes = ['Replies in <1 hr', 'Replies in <2 hrs', 'Replies in <4 hrs'];
+  const mentorStyles = ['🎯 Practical projects', '💡 Career strategy', '📖 Theory & research'];
+  const replyTime = replyTimes[seedIndex];
+  const mentorStyle = mentorStyles[seedIndex];
 
   const avState = mentorProfile?.availability_state || 'available';
   const avLabels = {
