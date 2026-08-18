@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from pydantic import BaseModel
 import datetime
-import logging
 
 from ..database import get_db
 from ..models import User, MentorProfile, Review, Session as SessionModel, MentorshipConnection
