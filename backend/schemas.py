@@ -74,6 +74,17 @@ class MentorProfileUpdate(BaseModel):
     what_ill_discuss: Optional[str] = None
     availability_state: Optional[str] = None
 
+class ReviewRead(BaseModel):
+    id: int
+    session_id: int
+    rating: int
+    note: Optional[str]
+    student_name: Optional[str] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class MentorProfileRead(MentorProfileBase):
     id: int
     user_id: int
@@ -163,15 +174,6 @@ class ReviewCreate(BaseModel):
     rating: int = Field(..., ge=1, le=5, description="Rating from 1 to 5 stars")
     note: Optional[str] = Field(None, description="Optional written review text")
 
-class ReviewRead(BaseModel):
-    id: int
-    session_id: int
-    rating: int
-    note: Optional[str]
-    student_name: Optional[str] = None
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 # ==========================================

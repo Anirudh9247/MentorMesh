@@ -1,3 +1,4 @@
+import os
 from dotenv import load_dotenv
 load_dotenv()  # Load environment variables from .env file
 
@@ -25,8 +26,12 @@ app = FastAPI(
 origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "*"  # Wildcard allowed for hackathon/deployment ease, can be locked down in production
 ]
+
+# Allow custom frontend URL in production
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    origins.append(frontend_url)
 
 app.add_middleware(
     CORSMiddleware,
