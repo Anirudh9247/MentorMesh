@@ -97,16 +97,10 @@ def offline_match_fallback(student_goals: str, student_city: str, mentors: List[
   ranked_mentors.sort(key=lambda x: (-x["score"], -x["mentor_data"].get("session_count", 0)))
   return ranked_mentors
 
-def match_with_anthropic(student_goals: str, student_city: str, mentors_payload: str) -> Optional[Dict[str, Any]]:
+def _get_matching_prompts(student_goals: str, student_city: str, mentors_payload: str) -> tuple[str, str]:
   """
-  Integrates Anthropic Claude matching client.
+  Returns the system instruction and user content strings for AI matching.
   """
-  if not ANTHROPIC_API_KEY:
-      logger.error("Missing ANTHROPIC_API_KEY environment variable.")
-      return None
-
-  client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-  
   system_instruction = (
       "You are the core AI matching intelligence of MentorMesh, a professional locality-first mentorship matching platform.\n"
       "Your task is to analyze the student's mentorship goals and location, evaluate each candidate mentor, score them from 0 to 100, and write a formal, professional 1-2 sentence explanation of the match.\n"
@@ -126,6 +120,19 @@ def match_with_anthropic(student_goals: str, student_city: str, mentors_payload:
       f"AVAILABLE MENTORS:\n{mentors_payload}\n\n"
       "Score each mentor and output the JSON."
   )
+
+  return system_instruction, user_content
+
+def match_with_anthropic(student_goals: str, student_city: str, mentors_payload: str) -> Optional[Dict[str, Any]]:
+  """
+  Integrates Anthropic Claude matching client.
+  """
+  if not ANTHROPIC_API_KEY:
+      logger.error("Missing ANTHROPIC_API_KEY environment variable.")
+      return None
+
+  client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+  system_instruction, user_content = _get_matching_prompts(student_goals, student_city, mentors_payload)
 
   try:
       response = client.messages.create(
@@ -150,26 +157,7 @@ def match_with_openai(student_goals: str, student_city: str, mentors_payload: st
       return None
 
   client = openai.OpenAI(api_key=OPENAI_API_KEY)
-  
-  system_instruction = (
-      "You are the core AI matching intelligence of MentorMesh, a professional locality-first mentorship matching platform.\n"
-      "Your task is to analyze the student's mentorship goals and location, evaluate each candidate mentor, score them from 0 to 100, and write a formal, professional 1-2 sentence explanation of the match.\n"
-      "CRITERIA FOR EVALUATION:\n"
-      "1. Expertise Alignment (40%): How closely the mentor's domains match the student's technical interests.\n"
-      "2. Topic Compatibility (30%): Alignment between the student's specific goals and the mentor's listed topics.\n"
-      "3. Locality Match (30%): Boost score if they share the same city. Highlight that they can meet in person.\n\n"
-      "MATCH REASON STYLE:\n"
-      "Keep it formal, specific, and direct. Avoid generic statements. Mention specific technical topics and location convenience. Example: '95% match based on shared Hyderabad location and exact alignment on AI/ML. Harsha can assist with your Quantum RNG research paper.'\n\n"
-      "RESPONSE FORMAT:\n"
-      "You must return ONLY a valid, raw JSON object matching this exact schema: {\"matches\": [{\"user_id\": <int>, \"match_score\": <int>, \"match_reason\": <str>}]}"
-  )
-  
-  user_content = (
-      f"STUDENT GOALS: {student_goals}\n"
-      f"STUDENT CITY: {student_city}\n\n"
-      f"AVAILABLE MENTORS:\n{mentors_payload}\n\n"
-      "Score each mentor and output the JSON."
-  )
+  system_instruction, user_content = _get_matching_prompts(student_goals, student_city, mentors_payload)
 
   try:
       response = client.chat.completions.create(
