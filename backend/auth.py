@@ -13,7 +13,10 @@ from .schemas import TokenData
 
 # Configuration parameters
 # In production (Render), these MUST be set via environment variables.
-SECRET_KEY = os.getenv("JWT_SECRET", "mentormesh_local_super_secret_key_1234567890_change_me")
+SECRET_KEY = os.getenv("JWT_SECRET")
+if not SECRET_KEY:
+    raise ValueError("JWT_SECRET environment variable is not set. It must be configured for security.")
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days expiration for convenience in a hackathon demo
 

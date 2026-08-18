@@ -3,6 +3,7 @@ from datetime import datetime
 
 # Set environment variable to use a test database
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
+os.environ["JWT_SECRET"] = "test_secret_key_12345"
 
 from backend.database import engine, Base, SessionLocal
 from backend.main import app
