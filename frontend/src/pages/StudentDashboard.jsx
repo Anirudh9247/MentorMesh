@@ -56,11 +56,11 @@ export default function StudentDashboard() {
         targetCity = user.city || 'Hyderabad';
         setStudent(studentData);
         setEditForm(studentData);
-        localStorage.setItem('studentDetails', JSON.stringify(studentData));
+        sessionStorage.setItem('studentDetails', JSON.stringify(studentData));
       } catch (err) {
         console.error("Failed to load student info from backend:", err);
-        // Fallback to localStorage if offline/error
-        const studentDetails = localStorage.getItem('studentDetails');
+        // Fallback to sessionStorage if offline/error
+        const studentDetails = sessionStorage.getItem('studentDetails');
         if (studentDetails) {
           try {
             const parsed = JSON.parse(studentDetails);
@@ -167,7 +167,7 @@ export default function StudentDashboard() {
       };
       setStudent(updatedData);
       setEditForm(updatedData);
-      localStorage.setItem('studentDetails', JSON.stringify(updatedData));
+      sessionStorage.setItem('studentDetails', JSON.stringify(updatedData));
       setIsEditingProfile(false);
     } catch (err) {
       console.error("Failed to save student profile coordinates:", err);

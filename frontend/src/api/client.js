@@ -10,10 +10,10 @@ const client = axios.create({
   },
 });
 
-// Request interceptor: attach auth token if it exists in local storage
+// Request interceptor: attach auth token if it exists in session storage
 client.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -30,8 +30,8 @@ client.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       // Clear expired credentials
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
       
       // Only redirect if we are not already on the login/register pages
       const currentPath = window.location.pathname;

@@ -81,7 +81,7 @@ export default function Login() {
       const response = await client.post('/auth/login', formData);
       const { access_token } = response.data;
       
-      localStorage.setItem('token', access_token);
+      sessionStorage.setItem('token', access_token);
 
       const tokenPayload = access_token.split('.')[1];
       let decodedPayload;
@@ -98,14 +98,14 @@ export default function Login() {
           throw new Error('Invalid token payload');
         }
       } catch (decodeError) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
         setSubmitError('Unable to parse authentication token. Please try again.');
         setLoading(false);
         return;
       }
 
-      localStorage.setItem('user', JSON.stringify(user));
+      sessionStorage.setItem('user', JSON.stringify(user));
 
       if (user.role === 'mentor') {
         navigate('/mentor-dashboard');

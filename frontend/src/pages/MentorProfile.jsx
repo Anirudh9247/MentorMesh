@@ -88,14 +88,14 @@ export default function MentorProfile() {
         const res = await client.get(`/mentors/${id}`);
         setMentor(res.data);
         
-        // Grab student city from local storage
-        const studentDetailsStr = localStorage.getItem('studentDetails');
+        // Grab student city from session storage
+        const studentDetailsStr = sessionStorage.getItem('studentDetails');
         if (studentDetailsStr) {
           const sObj = JSON.parse(studentDetailsStr);
           setStudentCity(sObj.city || '');
         }
 
-        const userStr = localStorage.getItem('user');
+        const userStr = sessionStorage.getItem('user');
         if (userStr) {
           const u = JSON.parse(userStr);
           setCurrentUser(u);
@@ -112,7 +112,7 @@ export default function MentorProfile() {
     fetchMentorDetails();
   }, [id]);
 
-  // 2. Load Match Score with localStorage cache lookup & fallback
+  // 2. Load Match Score with sessionStorage cache lookup & fallback
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'student') return;
 
@@ -123,8 +123,8 @@ export default function MentorProfile() {
       return;
     }
 
-    // B. Check localStorage cache
-    const cacheStr = localStorage.getItem('mentorMatchScores');
+    // B. Check sessionStorage cache
+    const cacheStr = sessionStorage.getItem('mentorMatchScores');
     if (cacheStr) {
       const cacheObj = JSON.parse(cacheStr);
       const mentorMatch = cacheObj[id];
@@ -137,7 +137,7 @@ export default function MentorProfile() {
 
     // C. Cold-start fallback query to matching backend API
     const fetchMatchScoreFromApi = async () => {
-      const studentDetailsStr = localStorage.getItem('studentDetails');
+      const studentDetailsStr = sessionStorage.getItem('studentDetails');
       if (studentDetailsStr) {
         const studentDetails = JSON.parse(studentDetailsStr);
         const goalText = studentDetails.nextTarget || studentDetails.next_target || studentDetails.focusArea || studentDetails.focus_area;
