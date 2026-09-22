@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Optional, List
 from pydantic import BaseModel
 import datetime
@@ -220,7 +220,10 @@ def get_mentor_by_user_id(
     ).count()
 
     # Fetch completed sessions with reviews for this mentor
-    sessions_with_reviews = db.query(SessionModel).filter(
+    sessions_with_reviews = db.query(SessionModel).options(
+        joinedload(SessionModel.review),
+        joinedload(SessionModel.student)
+    ).filter(
         SessionModel.mentor_id == user_id,
         SessionModel.status == "completed"
     ).all()
